@@ -1,0 +1,14 @@
+gym==0.26.2
+gym-notices==0.0.8
+matplotlib==3.9.2
+gymnasium
+numpy
+opencv-python==4.10.0.84
+pygame==2.6.1
+Shimmy
+stable_baselines3==2.3.2
+torch==2.5.0
+torchvision==0.20.0
+tqdm==4.66.5
+vizdoom==1.2.4
+
