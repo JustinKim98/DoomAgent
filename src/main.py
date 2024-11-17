@@ -9,6 +9,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common import policies
+from stable_baselines3.common.env_util import make_vec_env
 
 from gym import Env
 from gym.spaces import Discrete, Box
@@ -37,21 +38,24 @@ class PolicyModel(BaseFeaturesExtractor):
         self.maxpool3 = torch.nn.MaxPool2d(4, 2)
         self.relu3 = torch.nn.LeakyReLU()
 
+        self.conv2d4 = torch.nn.Conv2d(base_channel_size*4, base_channel_size*8, kernel_size=4)
+        self.bn4 = torch.nn.BatchNorm2d(base_channel_size*8)
+        self.maxpool4 = torch.nn.MaxPool2d(4, 2)
+        self.relu4 = torch.nn.LeakyReLU()
+
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(40320, 1024)
+        self.linear1 = torch.nn.Linear(11520, 1024)
         self.relu4 = torch.nn.LeakyReLU()
         self.linear2 = torch.nn.Linear(1024, features_dim)
-        self.relu5 = torch.nn.ReLU()
-        self.linear2 = torch.nn.Linear(32, features_dim)
-        self.relu6 = torch.nn.ReLU()
+        self.relu5 = torch.nn.LeakyReLU()
 
     def forward(self, state_input : torch.Tensor):
         h1 = self.conv2d1(state_input)
         h1 = self.bn1(h1)
         h1 = self.maxpool1(h1)
-        h2 = self.relu1(h1)
+        h1 = self.relu1(h1)
 
-        h2 = self.conv2d2(h2)
+        h2 = self.conv2d2(h1)
         h2 = self.bn2(h2)
         h2 = self.maxpool2(h2)
         h2 = self.relu2(h2)
@@ -61,16 +65,18 @@ class PolicyModel(BaseFeaturesExtractor):
         h3 = self.maxpool3(h3)
         h3 = self.relu3(h3)
 
-        h4 = self.flatten(h3)
-        h4 = self.linear1(h4)
-        h5 = self.relu4(h4)
+        h4 = self.conv2d4(h3)
+        h4 = self.bn4(h4)
+        h4 = self.maxpool4(h4)
+        h4 = self.relu4(h4)
 
-        h5 = self.linear2(h5)
-        h5 = self.relu5(h5)
+        h5 = self.flatten(h4)
+        h5 = self.linear1(h5)
+        h5 = self.relu4(h5)
 
-        h5 = self.linear3(h5)
-        h5 = self.relu5(h5)
-        return h5
+        h6 = self.linear2(h5)
+        out = self.relu5(h6)
+        return out
 
 class DoomEnv(Env):
     def __init__(self, scenario):
@@ -83,7 +89,7 @@ class DoomEnv(Env):
         self.game.set_console_enabled(True)
         self.game.set_render_all_frames(True)
 
-        self.game.set_living_reward(-1)
+        self.game.set_living_reward(0)
         self.game.set_death_penalty(100.0)
         self.game.set_available_buttons([
                             vzd.Button.ATTACK, 
@@ -107,6 +113,8 @@ class DoomEnv(Env):
         self.game.set_automap_buffer_enabled(True)
         self.game.set_objects_info_enabled(True)
         self.game.set_sectors_info_enabled(True)
+        self.game.set_labels_buffer_enabled(True)
+
 
         self.game.set_render_hud(True)
         self.game.set_render_crosshair(False)
@@ -153,15 +161,14 @@ class DoomEnv(Env):
         if cur_kills > self.num_kills and cur_hits > self.num_hits:
             print("Killed opponent!")
             self.num_kills = cur_kills
-            reward += 100
-        
-
-        if action == 0:
-            reward -= 10
+            reward += 300
             
         if cur_hits > self.num_hits:
             print("Shot oppnenet!")
-            reward += 50
+            reward += 100
+        elif action == 0:
+            reward -= 1
+
         self.num_hits = cur_hits
 
 
@@ -185,6 +192,9 @@ class DoomEnv(Env):
         
         self.step_cnt += 1
 
+        if self.step_cnt == self.maximum_steps:
+            reward = -10000
+
         self.total_reward += reward
         return self.wrap_state(state), reward, False, dict()
 
@@ -202,6 +212,8 @@ class DoomEnv(Env):
     
     def wrap_state(self, state : vzd.GameState): 
         screen_buffer = state.screen_buffer
+        objects = state.objects
+        
 
         # Depth buffer
         depth_buffer = state.depth_buffer
@@ -211,6 +223,9 @@ class DoomEnv(Env):
         # objects = state.objects
         cur_state = np.concatenate((screen_buffer, np.expand_dims(depth_buffer, 0)), axis=0)
         return cur_state
+
+    def seed(self, val):
+        self.game.set_seed(val)
 
     def close(self):
         self.game.close()
@@ -230,13 +245,15 @@ class SaveModelCallBack(BaseCallback):
 
 steps = 5000 
 env = DoomEnv("scenarios/deathmatch.cfg")
+vec_env = make_vec_env(lambda: DoomEnv("scenarios/deathmatch.cfg"), 2)
 policy_kwargs = dict(
     features_extractor_class=PolicyModel,
     features_extractor_kwargs=dict(features_dim=512),
 )
-model = PPO(policy='CnnPolicy', policy_kwargs=policy_kwargs, env=env, verbose=True, learning_rate=1e-4, n_steps=steps, device="mps")
+# model = PPO(policy='CnnPolicy', policy_kwargs=policy_kwargs, env=env, verbose=True, learning_rate=1e-5*5, n_steps=steps, device="mps")
+model = PPO.load("model_outputs_nov17-3/model_iter_90000.zip", env=vec_env, device="mps")
 
-callback = SaveModelCallBack(freq=10000, path="model_outputs_new")
+callback = SaveModelCallBack(freq=10000, path="model_outputs_nov17-3")
 model.learn(total_timesteps=steps*100, callback=callback)
 
 print("inference!")

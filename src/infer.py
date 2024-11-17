@@ -1,11 +1,81 @@
 import vizdoom as vzd
+import random
+import time
+import os
 import numpy as np
+import matplotlib.pyplot as plt
+import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common import policies
 
 from gym import Env
 from gym.spaces import Discrete, Box
+import cv2
+
+
+class PolicyModel(BaseFeaturesExtractor):
+    def __init__(self, observation_space : Box, features_dim):
+        super(PolicyModel, self).__init__(observation_space, features_dim)
+        input_channels = observation_space.shape[0]
+
+        base_channel_size = 16
+
+        self.conv2d1 = torch.nn.Conv2d(input_channels, base_channel_size, kernel_size=4)
+        self.bn1 = torch.nn.BatchNorm2d(base_channel_size)
+        self.maxpool1 = torch.nn.MaxPool2d(4, 2)
+        self.relu1 = torch.nn.LeakyReLU()
+
+        self.conv2d2 = torch.nn.Conv2d(base_channel_size, base_channel_size*2, kernel_size=4)
+        self.bn2 = torch.nn.BatchNorm2d(base_channel_size*2)
+        self.maxpool2 = torch.nn.MaxPool2d(4, 2)
+        self.relu2 = torch.nn.LeakyReLU()
+
+        self.conv2d3 = torch.nn.Conv2d(base_channel_size*2, base_channel_size*4, kernel_size=4)
+        self.bn3 = torch.nn.BatchNorm2d(base_channel_size*4)
+        self.maxpool3 = torch.nn.MaxPool2d(4, 2)
+        self.relu3 = torch.nn.LeakyReLU()
+
+        self.conv2d4 = torch.nn.Conv2d(base_channel_size*4, base_channel_size*8, kernel_size=4)
+        self.bn4 = torch.nn.BatchNorm2d(base_channel_size*8)
+        self.maxpool4 = torch.nn.MaxPool2d(4, 2)
+        self.relu4 = torch.nn.LeakyReLU()
+
+        self.flatten = torch.nn.Flatten()
+        self.linear1 = torch.nn.Linear(11520, 1024)
+        self.relu4 = torch.nn.LeakyReLU()
+        self.linear2 = torch.nn.Linear(1024, features_dim)
+        self.relu5 = torch.nn.LeakyReLU()
+
+    def forward(self, state_input : torch.Tensor):
+        h1 = self.conv2d1(state_input)
+        h1 = self.bn1(h1)
+        h1 = self.maxpool1(h1)
+        h1 = self.relu1(h1)
+
+        h2 = self.conv2d2(h1)
+        h2 = self.bn2(h2)
+        h2 = self.maxpool2(h2)
+        h2 = self.relu2(h2)
+
+        h3 = self.conv2d3(h2)
+        h3 = self.bn3(h3)
+        h3 = self.maxpool3(h3)
+        h3 = self.relu3(h3)
+
+        h4 = self.conv2d4(h3)
+        h4 = self.bn4(h4)
+        h4 = self.maxpool4(h4)
+        h4 = self.relu4(h4)
+
+        h5 = self.flatten(h4)
+        h5 = self.linear1(h5)
+        h5 = self.relu4(h5)
+
+        h6 = self.linear2(h5)
+        out = self.relu5(h6)
+        return out
 
 class DoomEnv(Env):
     def __init__(self, scenario):
@@ -18,7 +88,7 @@ class DoomEnv(Env):
         self.game.set_console_enabled(True)
         self.game.set_render_all_frames(True)
 
-        self.game.set_living_reward(-0.2)
+        self.game.set_living_reward(-0.01)
         self.game.set_death_penalty(100.0)
         self.game.set_available_buttons([
                             vzd.Button.ATTACK, 
@@ -36,14 +106,16 @@ class DoomEnv(Env):
                             vzd.Button.ALTATTACK,
                             vzd.Button.RELOAD])
         
-        self.game.set_screen_resolution(vzd.ScreenResolution.RES_640X480)
-        self.game.set_screen_format(vzd.ScreenFormat.RGB24)
+        self.game.set_screen_resolution(vzd.ScreenResolution.RES_320X180)
+        self.game.set_screen_format(vzd.ScreenFormat.CRCGCB)
         self.game.set_depth_buffer_enabled(True)
         self.game.set_automap_buffer_enabled(True)
         self.game.set_objects_info_enabled(True)
         self.game.set_sectors_info_enabled(True)
+        self.game.set_labels_buffer_enabled(True)
 
-        self.game.set_render_hud(False)
+
+        self.game.set_render_hud(True)
         self.game.set_render_crosshair(False)
         self.game.set_render_weapon(True)
         self.game.set_render_particles(False)
@@ -51,7 +123,7 @@ class DoomEnv(Env):
 
         self.game.init()
 
-        self.observation_space = Box(low=0,high=255,shape=(4, 480, 640), dtype=np.uint8)
+        self.observation_space = Box(low=0,high=255,shape=(4, 180, 320), dtype=np.uint8)
         self.action_space = Discrete(len(self.game.get_available_buttons()))
         self.actions = np.zeros(len(self.game.get_available_buttons()), dtype=np.uint8)
 
@@ -60,7 +132,8 @@ class DoomEnv(Env):
         self.num_hits = 0
         self.num_taken_hits = 0
         self.total_reward = 0
-        self.step_cnt = 0
+        self.prev_damage = 0
+        self.num_kills = 0
 
     def step(self, action):
         self.actions[action] = 1
@@ -69,26 +142,39 @@ class DoomEnv(Env):
         reward = self.game.get_last_reward()
         self.actions[action] = 0
 
-        # if action == 0:
-        #     reward -= 1 
-
         state = self.game.get_state()
 
         cur_hits = self.game.get_game_variable(vzd.GameVariable.HITCOUNT)
         cur_hits_taken = self.game.get_game_variable(vzd.GameVariable.HITS_TAKEN)
+        cur_damage = self.game.get_game_variable(vzd.GameVariable.DAMAGE_TAKEN)
+        cur_kills = self.game.get_game_variable(vzd.GameVariable.KILLCOUNT)
+        dead = self.game.get_game_variable(vzd.GameVariable.DEAD)
 
+        damage = cur_damage - self.prev_damage
+        self.prev_damage = cur_damage
+        reward -= damage
+
+        if dead:
+            reward -= 100
+
+        if cur_kills > self.num_kills and cur_hits > self.num_hits:
+            print("Killed opponent!")
+            self.num_kills = cur_kills
+            reward += 300
+            
         if cur_hits > self.num_hits:
             print("Shot oppnenet!")
-            reward += 50
-
-        if cur_hits_taken > self.num_taken_hits:
-            print("Damaged!")
-            reward -= 10
+            reward += 70
+        elif action == 0:
+            reward -= 20
 
         self.num_hits = cur_hits
-        self.num_taken_hits =cur_hits_taken 
 
-        # print(f"screen buffer : {screen_buffer}")
+
+        if damage > 0:
+            print(f"Damaged! {damage}")
+        self.num_taken_hits = cur_hits_taken 
+
         # print(f"depth buffer : {depth_buf}")
         # print(f"objects : {objects}")
         
@@ -101,11 +187,12 @@ class DoomEnv(Env):
             if is_truncated:
                 print("Truncated!")
             print(f"total reward : {self.total_reward}")
-            return np.zeros([4, 480, 640]), self.total_reward, True, dict()
+            return np.zeros([4, 180, 320]), self.total_reward, True, dict()
         
         self.step_cnt += 1
+
         if self.step_cnt == self.maximum_steps:
-            reward -= 200
+            reward = -10000
 
         self.total_reward += reward
         return self.wrap_state(state), reward, False, dict()
@@ -116,18 +203,24 @@ class DoomEnv(Env):
         self.total_reward = 0
         self.num_hits = 0
         self.num_taken_hits = 0
+        self.num_kills = 0
+        self.prev_damage = 0
+
         state = self.game.get_state()
         return self.wrap_state(state)
     
     def wrap_state(self, state : vzd.GameState): 
         screen_buffer = state.screen_buffer
+        objects = state.objects
+        
+
         # Depth buffer
         depth_buffer = state.depth_buffer
         # print(f"depth buffer : {depth_buffer}")
         # print(f"screen buffer : {screen_buffer}")
         # Objects in current state (including enemies)
         # objects = state.objects
-        cur_state = np.concatenate((screen_buffer.transpose(2, 0, 1), np.expand_dims(depth_buffer, 0)), axis=0)
+        cur_state = np.concatenate((screen_buffer, np.expand_dims(depth_buffer, 0)), axis=0)
         return cur_state
 
     def close(self):
@@ -137,7 +230,7 @@ class DoomEnv(Env):
 if __name__ == "__main__":
     print("loaded model!")
     env = DoomEnv("scenarios/deathmatch.cfg")
-    model = PPO.load("model_outputs/model_iter_200000.zip", env=env)
+    model = PPO.load("model_outputs_nov17-2/model_iter_100000.zip", env=env)
 
     env.reset()
     is_done = False
