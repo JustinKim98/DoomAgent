@@ -7,7 +7,7 @@ from gym import Env
 from gym.spaces import Discrete, Box
 
 class BaseEnv(Env):
-    def __init__(self, scenario):
+    def __init__(self, scenario, allowed_actions, frame_buffer_size=1, living_reward = 0):
         super().__init__()
 
         # Set game options
@@ -17,19 +17,9 @@ class BaseEnv(Env):
         self.game.set_console_enabled(True)
         self.game.set_render_all_frames(True)
 
-        self.game.set_living_reward(0)
+        self.game.set_living_reward(living_reward)
         self.game.set_death_penalty(100.0)
-        self.game.set_available_buttons([
-                            vzd.Button.ATTACK, 
-                            vzd.Button.MOVE_RIGHT,
-                            vzd.Button.MOVE_LEFT,
-                            vzd.Button.MOVE_UP, 
-                            vzd.Button.MOVE_DOWN,
-                            vzd.Button.TURN_LEFT,
-                            vzd.Button.TURN_RIGHT,
-                            # vzd.Button.ALTATTACK,
-                            vzd.Button.RELOAD
-                            ])
+        self.game.set_available_buttons(allowed_actions)
         
         self.game.set_screen_resolution(vzd.ScreenResolution.RES_640X480)
         self.game.set_screen_format(vzd.ScreenFormat.RGB24)
@@ -52,7 +42,7 @@ class BaseEnv(Env):
         plt.imsave('state.png', img)
 
         # Space configurations
-        self.observation_space = Box(low=0,high=255,shape=(12, 240, 320), dtype=np.uint8)
+        self.observation_space = Box(low=0,high=255,shape=(3*frame_buffer_size, 240, 320), dtype=np.uint8)
         self.action_space = Discrete(len(self.game.get_available_buttons()))
         self.actions = np.zeros(len(self.game.get_available_buttons()), dtype=np.uint8)
         self.tics = 4
@@ -66,6 +56,7 @@ class BaseEnv(Env):
         self.num_kills = 0
         self.prev_fragcount = 0
 
+        self.frame_buffer_size = frame_buffer_size
         self.frame_buffer = [
             np.zeros([3, 240, 320], dtype=np.uint8) for i in range(0, 4)
         ]
@@ -155,12 +146,11 @@ class BaseEnv(Env):
         img = cv2.resize(screen_buffer, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
         img = np.transpose(img, [2, 0, 1])
 
-        for i in range(0, 3):
+        for i in range(0, self.frame_buffer_size - 1):
             self.frame_buffer[i] = self.frame_buffer[i + 1]
-        self.frame_buffer[3] = img
+        self.frame_buffer[self.frame_buffer_size - 1] = img
 
-        img= np.concatenate(self.frame_buffer, 0)
-        return img
+        return np.concatenate(self.frame_buffer, axis=0)
     
     def wrap_state(self, state : vzd.GameState): 
         wrapped_state = self.update_frame_buffer(state)
