@@ -55,7 +55,7 @@ if __name__ == "__main__":
         ),
     )
 
-    torch.set_default_dtype(torch.float16)
+    torch.set_default_dtype(torch.float32)
 
     model = PPO(
         policy=policies.ActorCriticCnnPolicy,
@@ -66,8 +66,8 @@ if __name__ == "__main__":
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch4",
-        device="mps",
+        tensorboard_log="logs/deathmatch_continuous",
+        device="cuda",
     )
 
     callback = SaveModelCallBack(

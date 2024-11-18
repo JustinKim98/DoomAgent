@@ -26,12 +26,10 @@ class SaveModelCallBack(BaseCallback):
     def _on_step(self):
         if self.n_calls % self.frequency == 0:
             self.model.save(
-                os.path.join(self.model_path, "model_iter_{}".format(self.n_calls))
+                os.path.join(
+                    self.model_path, "model_iter_{}".format(self.n_calls / 100)
+                )
             )
-        # if self.n_calls % self.log_frequency == 0:
-        #     x, y = ts2xy(load_results(self.log_dir), "timesteps")
-        #     average = np.mean(y[-100:0])
-        #     self.writer.add_scalar()
 
         return True
 
@@ -42,8 +40,8 @@ if __name__ == "__main__":
         vzd.Button.ATTACK,
         vzd.Button.MOVE_RIGHT,
         vzd.Button.MOVE_LEFT,
-        vzd.Button.MOVE_UP,
-        vzd.Button.MOVE_DOWN,
+        vzd.Button.MOVE_FORWARD,
+        vzd.Button.MOVE_BACKWARD,
         vzd.Button.TURN_LEFT,
         vzd.Button.TURN_RIGHT,
         vzd.Button.RELOAD,
@@ -53,10 +51,11 @@ if __name__ == "__main__":
         lambda: env.BaseEnv(
             "scenarios/deathmatch.cfg",
             allowed_actions=allowed_actions,
-            frame_buffer_size=4,
-            living_reward=0,
-            kill_opponent_reward=200,
+            frame_buffer_size=6,
+            living_reward=0.1,
+            kill_opponent_reward=100,
             shoot_opponent_reward=70,
+            exploration_rate=0.1,
         ),
         2,
     )
@@ -66,7 +65,7 @@ if __name__ == "__main__":
         features_extractor_kwargs=dict(features_dim=512),
         net_arch=dict(
             activation_fn=torch.nn.LeakyReLU,
-            net_arch=dict(pi=[512, 256, 128, 64], vf=[512, 256, 128, 64]),
+            net_arch=dict(pi=[512, 256, 256, 128, 64], vf=[512, 256, 256, 128, 64]),
         ),
     )
 
@@ -79,11 +78,11 @@ if __name__ == "__main__":
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch4",
+        tensorboard_log="logs/deathmatch5",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=2500, log_dir="logs/deathmatch4", path="deathmatch_models4"
+        freq=10000, log_dir="logs/deathmatch5", path="deathmatch_models5"
     )
     model.learn(total_timesteps=steps * 1000, callback=callback)
