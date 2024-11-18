@@ -64,10 +64,10 @@ if __name__ == "__main__":
 
     policy_kwargs = dict(
         features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=1024),
+        features_extractor_kwargs=dict(features_dim=512),
         net_arch=dict(
-            activation_fn=torch.nn.ReLU,
-            net_arch=dict(pi=[512, 512, 256, 128, 64], vf=[512, 512, 256, 128, 64]),
+            activation_fn=torch.nn.LeakyReLU,
+            net_arch=dict(pi=[512, 256, 128, 64], vf=[512, 256, 128, 64]),
         ),
     )
 

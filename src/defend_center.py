@@ -51,6 +51,7 @@ if __name__ == "__main__":
             allowed_actions,
             frame_buffer_size=4,
             living_reward=-1,
+            exploration_rate=0.05,
         ),
         2,
     )
@@ -73,13 +74,13 @@ if __name__ == "__main__":
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/defend_center2",
+        tensorboard_log="logs/defend_center3",
         device="cuda",
     )
     # model = PPO.load("model_outputs_nov17-refined-1/model_iter_10000.zip", env = vec_env,  learning_ratedevice="mps")
 
     callback = SaveModelCallBack(
-        freq=2500, log_dir="logs/defend_center2", path="defend_center_models2"
+        freq=2500, log_dir="logs/defend_center3", path="defend_center_models3"
     )
     model.learn(total_timesteps=steps * 500, callback=callback)
 

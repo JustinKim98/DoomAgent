@@ -16,7 +16,7 @@ class BaseEnv(Env):
         living_reward=0,
         shoot_opponent_reward=50,
         kill_opponent_reward=100,
-        exploreation_rate=0.1,
+        exploration_rate=0.1,
     ):
         super().__init__()
 
@@ -69,7 +69,7 @@ class BaseEnv(Env):
 
         self.shoot_opponent_reward = shoot_opponent_reward
         self.kill_opponent_reward = kill_opponent_reward
-        self.exploration_rate = exploreation_rate
+        self.exploration_rate = exploration_rate
 
         # Game variable configurations
         self.maximum_steps = 50000
