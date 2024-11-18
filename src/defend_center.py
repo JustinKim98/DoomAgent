@@ -36,22 +36,18 @@ if __name__ == "__main__":
     steps = 2500
     allowed_actions = [
         vzd.Button.ATTACK,
-        # vzd.Button.MOVE_RIGHT,
-        # vzd.Button.MOVE_LEFT,
-        # vzd.Button.MOVE_UP,
-        # vzd.Button.MOVE_DOWN,
         vzd.Button.TURN_LEFT,
         vzd.Button.TURN_RIGHT,
-        # vzd.Button.ALTATTACK,
         vzd.Button.RELOAD,
     ]
+
     vec_env = make_vec_env(
         lambda: env.BaseEnv(
             "scenarios/defend_the_center.cfg",
             allowed_actions,
             frame_buffer_size=4,
             living_reward=-1,
-            exploration_rate=0.05,
+            exploration_rate=0.1,
         ),
         2,
     )
@@ -60,7 +56,7 @@ if __name__ == "__main__":
         features_extractor_class=model.PolicyModel,
         features_extractor_kwargs=dict(features_dim=512),
         net_arch=dict(
-            activation_fn=torch.nn.ReLU,
+            activation_fn=torch.nn.LeakyReLU,
             net_arch=dict(pi=[512, 256, 128, 32], vf=[512, 256, 128, 32]),
         ),
     )
@@ -74,25 +70,12 @@ if __name__ == "__main__":
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/defend_center3",
+        tensorboard_log="logs/defend_center4",
         device="cuda",
     )
     # model = PPO.load("model_outputs_nov17-refined-1/model_iter_10000.zip", env = vec_env,  learning_ratedevice="mps")
 
     callback = SaveModelCallBack(
-        freq=2500, log_dir="logs/defend_center3", path="defend_center_models3"
+        freq=2500, log_dir="logs/defend_center4", path="defend_center_models4"
     )
     model.learn(total_timesteps=steps * 500, callback=callback)
-
-    # print("inference!")
-    # env.reset()
-    # is_done = False
-    # action = 0
-
-    # for i in range (0, 10):
-    #     print(f"episode : {i}")
-    #     while(not is_done):
-    #         state, reward, is_done, _ = env.step(action)
-    #         action = model.predict(state)
-    #     env.reset()
-    #     is_done = False

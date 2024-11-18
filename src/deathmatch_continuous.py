@@ -28,31 +28,16 @@ class SaveModelCallBack(BaseCallback):
             self.model.save(
                 os.path.join(self.model_path, "model_iter_{}".format(self.n_calls))
             )
-        # if self.n_calls % self.log_frequency == 0:
-        #     x, y = ts2xy(load_results(self.log_dir), "timesteps")
-        #     average = np.mean(y[-100:0])
-        #     self.writer.add_scalar()
 
         return True
 
 
 if __name__ == "__main__":
     steps = 2500
-    allowed_actions = [
-        vzd.Button.ATTACK,
-        vzd.Button.MOVE_RIGHT,
-        vzd.Button.MOVE_LEFT,
-        vzd.Button.MOVE_UP,
-        vzd.Button.MOVE_DOWN,
-        vzd.Button.TURN_LEFT,
-        vzd.Button.TURN_RIGHT,
-        vzd.Button.RELOAD,
-    ]
 
     vec_env = make_vec_env(
-        lambda: env.BaseEnv(
+        lambda: env.ContinuousEnv(
             "scenarios/deathmatch.cfg",
-            allowed_actions=allowed_actions,
             frame_buffer_size=4,
             living_reward=0,
             kill_opponent_reward=200,
@@ -84,6 +69,8 @@ if __name__ == "__main__":
     )
 
     callback = SaveModelCallBack(
-        freq=2500, log_dir="logs/deathmatch4", path="deathmatch_models4"
+        freq=2500,
+        log_dir="logs/deathmatch_continuous",
+        path="deathmatch_continuous_models",
     )
     model.learn(total_timesteps=steps * 1000, callback=callback)
