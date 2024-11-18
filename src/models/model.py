@@ -4,39 +4,46 @@ from gym.spaces import Box
 
 
 class PolicyModel(BaseFeaturesExtractor):
-    def __init__(self, observation_space : Box, features_dim):
+    def __init__(self, observation_space: Box, features_dim):
         super(PolicyModel, self).__init__(observation_space, features_dim)
         input_channels = observation_space.shape[0]
 
-        base_channel_size = 16
+        # base_channel_size = 16
+        base_channel_size = 32
 
         self.conv2d1 = torch.nn.Conv2d(input_channels, base_channel_size, kernel_size=4)
         self.bn1 = torch.nn.BatchNorm2d(base_channel_size)
         self.maxpool1 = torch.nn.MaxPool2d(4, 2)
         self.relu1 = torch.nn.LeakyReLU()
 
-        self.conv2d2 = torch.nn.Conv2d(base_channel_size, base_channel_size*2, kernel_size=4)
-        self.bn2 = torch.nn.BatchNorm2d(base_channel_size*2)
+        self.conv2d2 = torch.nn.Conv2d(
+            base_channel_size, base_channel_size * 2, kernel_size=4
+        )
+        self.bn2 = torch.nn.BatchNorm2d(base_channel_size * 2)
         self.maxpool2 = torch.nn.MaxPool2d(4, 2)
         self.relu2 = torch.nn.LeakyReLU()
 
-        self.conv2d3 = torch.nn.Conv2d(base_channel_size*2, base_channel_size*4, kernel_size=4)
-        self.bn3 = torch.nn.BatchNorm2d(base_channel_size*4)
+        self.conv2d3 = torch.nn.Conv2d(
+            base_channel_size * 2, base_channel_size * 4, kernel_size=4
+        )
+        self.bn3 = torch.nn.BatchNorm2d(base_channel_size * 4)
         self.maxpool3 = torch.nn.MaxPool2d(4, 2)
         self.relu3 = torch.nn.LeakyReLU()
 
-        self.conv2d4 = torch.nn.Conv2d(base_channel_size*4, base_channel_size*8, kernel_size=4)
-        self.bn4 = torch.nn.BatchNorm2d(base_channel_size*8)
+        self.conv2d4 = torch.nn.Conv2d(
+            base_channel_size * 4, base_channel_size * 8, kernel_size=4
+        )
+        self.bn4 = torch.nn.BatchNorm2d(base_channel_size * 8)
         self.maxpool4 = torch.nn.MaxPool2d(4, 2)
         self.relu4 = torch.nn.LeakyReLU()
 
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(19200, 1024)
+        self.linear1 = torch.nn.Linear(38400, 1024)
         self.relu4 = torch.nn.LeakyReLU()
         self.linear2 = torch.nn.Linear(1024, features_dim)
         self.relu5 = torch.nn.LeakyReLU()
 
-    def forward(self, state_input : torch.Tensor):
+    def forward(self, state_input: torch.Tensor):
         h1 = self.conv2d1(state_input)
         h1 = self.bn1(h1)
         h1 = self.maxpool1(h1)
