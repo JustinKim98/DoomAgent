@@ -16,6 +16,7 @@ class BaseEnv(Env):
         living_reward=0,
         shoot_opponent_reward=50,
         kill_opponent_reward=100,
+        exploreation_rate=0.1,
     ):
         super().__init__()
 
@@ -60,12 +61,15 @@ class BaseEnv(Env):
         self.observation_space = Box(
             low=0, high=255, shape=(3 * frame_buffer_size, 240, 320), dtype=np.uint8
         )
-        self.action_space = Discrete(len(self.game.get_available_buttons()))
-        self.actions = np.zeros(len(self.game.get_available_buttons()), dtype=np.uint8)
+
+        self.action_space_size = len(self.game.get_available_buttons())
+        self.action_space = Discrete(self.action_space_size)
+        self.actions = np.zeros(self.action_space_size, dtype=np.uint8)
         self.tics = 4
 
         self.shoot_opponent_reward = shoot_opponent_reward
         self.kill_opponent_reward = kill_opponent_reward
+        self.exploration_rate = exploreation_rate
 
         # Game variable configurations
         self.maximum_steps = 50000
@@ -83,6 +87,9 @@ class BaseEnv(Env):
         ]
 
     def step(self, action):
+        if np.random.uniform(0, 1) < self.exploration_rate:
+            action = np.random.choice(self.action_space_size, 1)[0]
+
         self.actions[action] = 1
         self.game.set_action(self.actions)
         self.game.advance_action(4)

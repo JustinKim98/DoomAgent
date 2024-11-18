@@ -55,7 +55,7 @@ if __name__ == "__main__":
             "scenarios/deathmatch.cfg",
             allowed_actions=allowed_actions,
             frame_buffer_size=4,
-            living_reward=-0,
+            living_reward=0,
             kill_opponent_reward=200,
             shoot_opponent_reward=70,
         ),
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     )
 
     callback = SaveModelCallBack(
-        freq=2500, log_dir="logs/deathmatch4", path="deathmatch_models3"
+        freq=2500, log_dir="logs/deathmatch4", path="deathmatch_models4"
     )
     model.learn(total_timesteps=steps * 1000, callback=callback)
 
