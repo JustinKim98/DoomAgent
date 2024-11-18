@@ -61,6 +61,8 @@ if __name__ == "__main__":
         ),
     )
 
+    torch.set_default_dtype(torch.float16)
+
     model = PPO(
         policy=policies.ActorCriticCnnPolicy,
         policy_kwargs=policy_kwargs,

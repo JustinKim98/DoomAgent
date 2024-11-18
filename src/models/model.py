@@ -11,6 +11,7 @@ class PolicyModel(BaseFeaturesExtractor):
         # base_channel_size = 16
         base_channel_size = 32
 
+        # vzd.Button.ALTATTACK,
         self.conv2d1 = torch.nn.Conv2d(input_channels, base_channel_size, kernel_size=4)
         self.bn1 = torch.nn.BatchNorm2d(base_channel_size)
         self.maxpool1 = torch.nn.MaxPool2d(4, 2)

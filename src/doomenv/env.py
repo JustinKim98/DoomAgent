@@ -225,11 +225,15 @@ class ContinuousEnv(Env):
         self.game.set_death_penalty(100.0)
 
         # Use continuous action space
-        self.game.set_available_buttons([])
-        self.game.add_available_button(vzd.Button.ATTACK)
-        self.game.add_available_button(vzd.Button.MOVE_FORWARD_BACKWARD_DELTA, 10)
-        self.game.add_available_button(vzd.Button.MOVE_LEFT_RIGHT_DELTA, 5)
-        self.game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 5)
+        self.game.clear_available_buttons()
+        self.game.add_available_button(vzd.Button.ATTACK)  # 0
+        self.game.add_available_button(vzd.Button.MOVE_FORWARD_BACKWARD_DELTA, 10)  # 1
+        self.game.add_available_button(vzd.Button.MOVE_LEFT_RIGHT_DELTA, 5)  # 2
+        self.game.add_available_button(vzd.Button.TURN_LEFT_RIGHT_DELTA, 5)  # 3
+        self.game.add_available_button(vzd.Button.MOVE_FORWARD)  # 4
+        self.game.add_available_button(vzd.Button.MOVE_BACKWARD)  # 5
+        self.game.add_available_button(vzd.Button.TURN_RIGHT)  # 6
+        self.game.add_available_button(vzd.Button.TURN_LEFT)  # 7
 
         self.game.set_screen_resolution(vzd.ScreenResolution.RES_640X480)
         self.game.set_screen_format(vzd.ScreenFormat.RGB24)
@@ -280,7 +284,17 @@ class ContinuousEnv(Env):
         ]
 
     def step(self, action):
-        print(f"actions : {action}")
+
+        action[0] = 1 if action[0] > 0 else 0
+        action[1] *= 10
+        action[2] *= 5
+        action[3] *= 5
+        action[4] = 1 if action[4] > 0 else 0
+        action[5] = 1 if action[4] > 1 else 0
+        action[6] = 1 if action[4] > 1 else 0
+        action[7] = 1 if action[4] > 1 else 0
+
+        self.actions = action
         self.game.set_action(self.actions)
         self.game.advance_action(4)
         reward = self.game.get_last_reward()
