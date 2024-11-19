@@ -184,15 +184,6 @@ class ContinuousEnv(Env):
     def wrap_state(self, state: vzd.GameState):
         wrapped_state = self.update_frame_buffer(state)
         return wrapped_state
-        # Depth buffer
-        # depth_buffer = state.depth_buffer
-
-        # print(f"depth buffer : {depth_buffer}")
-        # print(f"screen buffer : {screen_buffer}")
-        # Objects in current state (including enemies)
-        # objects = state.objects
-
-        return img
 
     def seed(self, val):
         self.game.set_seed(val)

@@ -35,7 +35,7 @@ class SaveModelCallBack(BaseCallback):
 
 
 if __name__ == "__main__":
-    steps = 2500
+    steps = 10000
     allowed_actions = [
         vzd.Button.ATTACK,
         vzd.Button.MOVE_RIGHT,
@@ -53,9 +53,9 @@ if __name__ == "__main__":
             allowed_actions=allowed_actions,
             frame_buffer_size=6,
             living_reward=0.1,
-            kill_opponent_reward=100,
+            kill_opponent_reward=150,
             shoot_opponent_reward=70,
-            exploration_rate=0.1,
+            exploration_rate=0.05,
         ),
         2,
     )
@@ -65,7 +65,11 @@ if __name__ == "__main__":
         features_extractor_kwargs=dict(features_dim=512),
         net_arch=dict(
             activation_fn=torch.nn.LeakyReLU,
-            net_arch=dict(pi=[512, 256, 256, 128, 64], vf=[512, 256, 256, 128, 64]),
+            # net_arch=dict(pi=[512, 256, 256, 128, 64], vf=[512, 256, 256, 128, 64]), # Deathmatch 5-2
+            net_arch=dict(
+                pi=[512, 512, 256, 256, 256, 128, 64],
+                vf=[512, 512, 256, 256, 256, 128, 64],
+            ),
         ),
     )
 
@@ -78,11 +82,11 @@ if __name__ == "__main__":
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch5",
+        tensorboard_log="logs/deathmatch6",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/deathmatch5", path="deathmatch_models5"
+        freq=10000, log_dir="logs/deathmatch6", path="deathmatch_models6"
     )
-    model.learn(total_timesteps=steps * 1000, callback=callback)
+    model.learn(total_timesteps=steps * 10000, callback=callback)

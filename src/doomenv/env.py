@@ -28,7 +28,7 @@ class BaseEnv(Env):
         self.game.set_render_all_frames(True)
 
         self.game.set_living_reward(living_reward)
-        self.game.set_death_penalty(100.0)
+        self.game.set_death_penalty(0)
         self.game.set_available_buttons(allowed_actions)
 
         self.game.set_screen_resolution(vzd.ScreenResolution.RES_640X480)
@@ -72,7 +72,7 @@ class BaseEnv(Env):
         self.exploration_rate = exploration_rate
 
         # Game variable configurations
-        self.maximum_steps = 50000
+        self.maximum_steps = 500000
         self.step_cnt = 0
         self.num_hits = 0
         self.num_taken_hits = 0
@@ -120,8 +120,8 @@ class BaseEnv(Env):
             print(f"Damaged! {damage}")
 
         if damage_given > 0:
-            reward += damage_given * 2
-            print(f"Shot : {damage_given*2}")
+            reward += damage_given * 5
+            print(f"Shot : {damage_given*5}")
 
         if action == 0 and damage_given == 0:
             reward -= 1
@@ -138,16 +138,17 @@ class BaseEnv(Env):
             if is_truncated:
                 print("Truncated!")
             print(f"total reward : {self.total_reward}")
-            return np.zeros([12, 240, 320]), self.total_reward, True, dict()
+            return (
+                np.zeros([3 * self.frame_buffer_size, 240, 320]),
+                self.total_reward,
+                True,
+                dict(),
+            )
 
         self.step_cnt += 1
 
-        if self.step_cnt == self.maximum_steps:
-            reward = -10000
-
         if self.game.is_player_dead() and (not is_terminated):
             self.game.respawn_player()
-            reward -= 100
 
         self.total_reward += reward
         return self.wrap_state(state), reward, False, dict()
@@ -249,7 +250,6 @@ class ContinuousEnv(Env):
         )
 
         self.action_space_size = len(self.game.get_available_buttons())
-        print(f"action space size : {self.action_space_size}")
         self.action_space = Box(low=-1.0, high=1.0, shape=(self.action_space_size,))
         self.actions = np.zeros(self.action_space_size, dtype=np.uint8)
         self.tics = 4
@@ -259,7 +259,7 @@ class ContinuousEnv(Env):
         self.exploration_rate = exploration_rate
 
         # Game variable configurations
-        self.maximum_steps = 50000
+        self.maximum_steps = 500000
         self.num_hits = 0
         self.num_taken_hits = 0
         self.total_reward = 0
@@ -336,9 +336,6 @@ class ContinuousEnv(Env):
             return np.zeros([12, 240, 320]), self.total_reward, True, dict()
 
         self.step_cnt += 1
-
-        if self.step_cnt == self.maximum_steps:
-            reward = -10000
 
         self.total_reward += reward
 
