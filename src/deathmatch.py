@@ -35,7 +35,7 @@ class SaveModelCallBack(BaseCallback):
 
 
 if __name__ == "__main__":
-    steps = 10000
+    steps = 5000
     allowed_actions = [
         vzd.Button.ATTACK,
         vzd.Button.MOVE_RIGHT,

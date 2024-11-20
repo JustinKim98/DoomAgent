@@ -260,10 +260,12 @@ class ContinuousEnv(Env):
 
         # Game variable configurations
         self.maximum_steps = 500000
+        self.step_cnt = 0
         self.num_hits = 0
         self.num_taken_hits = 0
         self.total_reward = 0
         self.prev_damage = 0
+        self.prev_damage_given = 0
         self.num_kills = 0
         self.prev_fragcount = 0
 
@@ -285,46 +287,40 @@ class ContinuousEnv(Env):
         action[7] = 1 if action[7] > 0 else 0
 
         self.actions = action
-        self.game.set_action(self.actions)
-        self.game.advance_action(4)
-        reward = self.game.get_last_reward()
+        reward = self.game.make_action(self.actions, tics=2)
         state = self.game.get_state()
 
         cur_hits = self.game.get_game_variable(vzd.GameVariable.HITCOUNT)
         cur_hits_taken = self.game.get_game_variable(vzd.GameVariable.HITS_TAKEN)
         cur_damage = self.game.get_game_variable(vzd.GameVariable.DAMAGE_TAKEN)
+        cur_damage_given = self.game.get_game_variable(vzd.GameVariable.DAMAGECOUNT)
         cur_kills = self.game.get_game_variable(vzd.GameVariable.KILLCOUNT)
-        cur_fragcount = self.game.get_game_variable(vzd.GameVariable.FRAGCOUNT)
-        dead = self.game.get_game_variable(vzd.GameVariable.DEAD)
 
         damage = cur_damage - self.prev_damage
-        self.prev_damage = cur_damage
+        damage_given = cur_damage_given - self.prev_damage_given
         reward -= damage
 
-        if dead:
-            reward -= 100
-
-        if cur_kills > self.num_kills and cur_hits > self.num_hits:
+        if action[0] == 1 and cur_kills > self.num_kills and cur_hits > self.num_hits:
             print("Killed opponent!")
-            self.num_kills = cur_kills
             reward += self.kill_opponent_reward
 
-        reward += (cur_fragcount - self.prev_fragcount) * 10
-        if cur_fragcount != self.prev_fragcount:
-            print(f"fragcount: {cur_fragcount - self.prev_fragcount}")
-        self.prev_fragcount = cur_fragcount
+        if damage > 0:
+            reward -= damage
+            print(f"Damaged! {damage}")
 
-        if cur_hits > self.num_hits:
-            print("Shot oppnenet!")
-            reward += self.shoot_opponent_reward
-        elif action[0] > 0:
+        if action[0] == 1 and damage_given > 0:
+            reward += damage_given * 5
+            print(f"Shot : {damage_given*5}")
+
+        if action[0] == 0 and damage_given == 0:
+            print("missed shot")
             reward -= 1
 
         self.num_hits = cur_hits
-
-        if damage > 0:
-            print(f"Damaged! {damage}")
         self.num_taken_hits = cur_hits_taken
+        self.prev_damage = cur_damage
+        self.prev_damage_given = cur_damage_given
+        self.num_kills = cur_kills
 
         is_terminated = self.game.is_episode_finished()
         is_truncated = self.step_cnt > self.maximum_steps
@@ -333,15 +329,19 @@ class ContinuousEnv(Env):
             if is_truncated:
                 print("Truncated!")
             print(f"total reward : {self.total_reward}")
-            return np.zeros([12, 240, 320]), self.total_reward, True, dict()
+            return (
+                np.zeros([3 * self.frame_buffer_size, 240, 320]),
+                self.total_reward,
+                True,
+                dict(),
+            )
 
         self.step_cnt += 1
-
-        self.total_reward += reward
 
         if self.game.is_player_dead() and (not is_terminated):
             self.game.respawn_player()
 
+        self.total_reward += reward
         return self.wrap_state(state), reward, False, dict()
 
     def reset(self):
@@ -350,8 +350,9 @@ class ContinuousEnv(Env):
         self.total_reward = 0
         self.num_hits = 0
         self.num_taken_hits = 0
-        self.num_kills = 0
         self.prev_damage = 0
+        self.prev_damage_given = 0
+        self.num_kills = 0
         self.prev_fragcount = 0
 
         state = self.game.get_state()

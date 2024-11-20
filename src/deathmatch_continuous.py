@@ -43,15 +43,18 @@ if __name__ == "__main__":
             kill_opponent_reward=200,
             shoot_opponent_reward=70,
         ),
-        2,
+        1,
     )
 
     policy_kwargs = dict(
         features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=512),
+        features_extractor_kwargs=dict(features_dim=1024),
         net_arch=dict(
             activation_fn=torch.nn.LeakyReLU,
-            net_arch=dict(pi=[512, 256, 128, 64], vf=[512, 256, 128, 64]),
+            net_arch=dict(
+                pi=[1024, 512, 512, 256, 256, 128, 64],
+                vf=[1024, 512, 512, 256, 256, 128, 64],
+            ),
         ),
     )
 
@@ -75,4 +78,4 @@ if __name__ == "__main__":
         log_dir="logs/deathmatch_continuous",
         path="deathmatch_continuous_models",
     )
-    model.learn(total_timesteps=steps * 1000, callback=callback)
+    model.learn(total_timesteps=steps * 10000, callback=callback)
