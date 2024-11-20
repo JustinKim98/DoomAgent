@@ -33,13 +33,13 @@ class SaveModelCallBack(BaseCallback):
 
 
 if __name__ == "__main__":
-    steps = 2500
+    steps = 10000
 
     vec_env = make_vec_env(
         lambda: env.ContinuousEnv(
             "scenarios/deathmatch.cfg",
-            frame_buffer_size=4,
-            living_reward=0,
+            frame_buffer_size=6,
+            living_reward=0.1,
             kill_opponent_reward=200,
             shoot_opponent_reward=70,
         ),
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     )
 
     callback = SaveModelCallBack(
-        freq=2500,
+        freq=10000,
         log_dir="logs/deathmatch_continuous",
         path="deathmatch_continuous_models",
     )

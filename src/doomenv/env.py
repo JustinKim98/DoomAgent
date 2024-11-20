@@ -312,7 +312,7 @@ class ContinuousEnv(Env):
             reward += damage_given * 5
             print(f"Shot : {damage_given*5}")
 
-        if action[0] == 0 and damage_given == 0:
+        if action[0] == 1 and damage_given == 0:
             print("missed shot")
             reward -= 1
 
@@ -347,9 +347,9 @@ class ContinuousEnv(Env):
     def reset(self):
         self.game.new_episode()
         self.step_cnt = 0
-        self.total_reward = 0
         self.num_hits = 0
         self.num_taken_hits = 0
+        self.total_reward = 0
         self.prev_damage = 0
         self.prev_damage_given = 0
         self.num_kills = 0
