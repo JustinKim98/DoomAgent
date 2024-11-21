@@ -94,7 +94,7 @@ class BaseEnv(Env):
 
         self.actions[action] = 1
         self.game.set_action(self.actions)
-        self.game.advance_action(4)
+        self.game.advance_action(self.tics)
         reward = self.game.get_last_reward()
         self.actions[action] = 0
 

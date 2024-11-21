@@ -8,7 +8,6 @@ class PolicyModel(BaseFeaturesExtractor):
         super(PolicyModel, self).__init__(observation_space, features_dim)
         input_channels = observation_space.shape[0]
 
-        # base_channel_size = 16
         base_channel_size = 32
 
         # vzd.Button.ALTATTACK,

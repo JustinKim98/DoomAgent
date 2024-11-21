@@ -39,7 +39,7 @@ if __name__ == "__main__":
         lambda: env.ContinuousEnv(
             "scenarios/deathmatch.cfg",
             frame_buffer_size=6,
-            living_reward=0.1,
+            living_reward=0.01,
             kill_opponent_reward=200,
             shoot_opponent_reward=70,
         ),

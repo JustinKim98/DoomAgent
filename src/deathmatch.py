@@ -35,7 +35,7 @@ class SaveModelCallBack(BaseCallback):
 
 
 if __name__ == "__main__":
-    steps = 5000
+    steps = 10000
     allowed_actions = [
         vzd.Button.ATTACK,
         vzd.Button.MOVE_RIGHT,
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             "scenarios/deathmatch.cfg",
             allowed_actions=allowed_actions,
             frame_buffer_size=6,
-            living_reward=0.1,
+            living_reward=0.01,
             kill_opponent_reward=150,
             shoot_opponent_reward=70,
             exploration_rate=0.05,
@@ -62,13 +62,13 @@ if __name__ == "__main__":
 
     policy_kwargs = dict(
         features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=512),
+        features_extractor_kwargs=dict(features_dim=1024),
         net_arch=dict(
             activation_fn=torch.nn.LeakyReLU,
             # net_arch=dict(pi=[512, 256, 256, 128, 64], vf=[512, 256, 256, 128, 64]), # Deathmatch 5-2
             net_arch=dict(
-                pi=[512, 512, 256, 256, 256, 128, 64],
-                vf=[512, 512, 256, 256, 256, 128, 64],
+                pi=[1024, 1024, 512, 512, 512, 256, 256, 256, 128, 64],
+                vf=[1024, 1024, 512, 512, 512, 256, 256, 256, 128, 64],
             ),
         ),
     )
@@ -78,15 +78,15 @@ if __name__ == "__main__":
         policy_kwargs=policy_kwargs,
         env=vec_env,
         verbose=True,
-        learning_rate=1e-5 * 5,
+        learning_rate=1e-5*2,
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch6",
+        tensorboard_log="logs/deathmatch7",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/deathmatch6", path="deathmatch_models6"
+        freq=10000, log_dir="logs/deathmatch7", path="deathmatch_models7"
     )
     model.learn(total_timesteps=steps * 10000, callback=callback)
