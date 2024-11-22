@@ -48,14 +48,14 @@ class BaseEnv(Env):
 
         # Initialize vizddom environment
         self.game.init()
-        img = cv2.resize(
-            self.game.get_state().screen_buffer,
-            None,
-            fx=0.5,
-            fy=0.5,
-            interpolation=cv2.INTER_LINEAR,
-        )
-        plt.imsave("state.png", img)
+
+        # Frame buffer settings
+        self.frame_storage_size = int((frame_buffer_size*(frame_buffer_size-1))/2) + 1
+        self.frame_buffer_size = frame_buffer_size
+        self.frame_buffer = [
+            np.zeros([3, 240, 320], dtype=np.uint8)
+            for i in range(0, self.frame_storage_size)
+        ]
 
         # Space configurations
         self.observation_space = Box(
@@ -81,12 +81,6 @@ class BaseEnv(Env):
         self.prev_damage_given = 0
         self.num_kills = 0
         self.prev_fragcount = 0
-
-        self.frame_buffer_size = frame_buffer_size
-        self.frame_buffer = [
-            np.zeros([3, 240, 320], dtype=np.uint8)
-            for i in range(0, self.frame_buffer_size)
-        ]
 
     def step(self, action):
         if np.random.uniform(0, 1) < self.exploration_rate:
@@ -175,11 +169,17 @@ class BaseEnv(Env):
         )
         img = np.transpose(img, [2, 0, 1])
 
-        for i in range(0, self.frame_buffer_size - 1):
+        for i in range(0, self.frame_storage_size - 1):
             self.frame_buffer[i] = self.frame_buffer[i + 1]
-        self.frame_buffer[self.frame_buffer_size - 1] = img
+        self.frame_buffer[self.frame_storage_size - 1] = img
 
-        return np.concatenate(self.frame_buffer, axis=0)
+        cnt = 0
+        env_frames = list()
+        for i in range(0, self.frame_buffer_size):
+            cnt += i
+            env_frames.append(self.frame_buffer[cnt])
+
+        return np.concatenate(env_frames, axis=0)
 
     def wrap_state(self, state: vzd.GameState):
         wrapped_state = self.update_frame_buffer(state)

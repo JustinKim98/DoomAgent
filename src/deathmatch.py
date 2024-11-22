@@ -62,14 +62,18 @@ if __name__ == "__main__":
 
     policy_kwargs = dict(
         features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=1024),
+        features_extractor_kwargs=dict(features_dim=2048),
         net_arch=dict(
-            activation_fn=torch.nn.LeakyReLU,
-            # net_arch=dict(pi=[512, 256, 256, 128, 64], vf=[512, 256, 256, 128, 64]), # Deathmatch 5-2
-            net_arch=dict(
-                pi=[1024, 1024, 512, 512, 512, 256, 256, 256, 128, 64],
-                vf=[1024, 1024, 512, 512, 512, 256, 256, 256, 128, 64],
-            ),
+            activation_fn=torch.nn.Tanh,
+            net_arch=[
+                2048,
+                1024,
+                1024,
+                dict(
+                    vf=[512, 512, 512, 256, 256, 256, 128, 64],
+                    pi=[512, 512, 512, 256, 256, 256, 128, 64],
+                ),
+            ],
         ),
     )
 
@@ -78,15 +82,15 @@ if __name__ == "__main__":
         policy_kwargs=policy_kwargs,
         env=vec_env,
         verbose=True,
-        learning_rate=1e-5*2,
+        learning_rate=1e-5*1,
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch7",
+        tensorboard_log="logs/deathmatch8",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/deathmatch7", path="deathmatch_models7"
+        freq=10000, log_dir="logs/deathmatch8", path="deathmatch_models8"
     )
     model.learn(total_timesteps=steps * 10000, callback=callback)
