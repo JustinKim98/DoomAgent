@@ -53,7 +53,7 @@ if __name__ == "__main__":
             allowed_actions=allowed_actions,
             frame_buffer_size=6,
             living_reward=0.01,
-            kill_opponent_reward=150,
+            kill_opponent_reward=100,
             shoot_opponent_reward=70,
             exploration_rate=0.05,
         ),
@@ -62,18 +62,14 @@ if __name__ == "__main__":
 
     policy_kwargs = dict(
         features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=2048),
+        features_extractor_kwargs=dict(features_dim=1024),
         net_arch=dict(
             activation_fn=torch.nn.Tanh,
-            net_arch=[
-                2048,
-                1024,
-                1024,
+            net_arch=
                 dict(
-                    vf=[512, 512, 512, 256, 256, 256, 128, 64],
-                    pi=[512, 512, 512, 256, 256, 256, 128, 64],
+                    vf=[1024, 512, 512, 256, 256, 256, 128, 64],
+                    pi=[1024, 512, 512, 256, 256, 256, 128, 64],
                 ),
-            ],
         ),
     )
 
@@ -82,15 +78,15 @@ if __name__ == "__main__":
         policy_kwargs=policy_kwargs,
         env=vec_env,
         verbose=True,
-        learning_rate=1e-5*1,
+        learning_rate=1e-6*2,
         batch_size=64,
-        gamma=0.99,
+        gamma=0.995,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch8",
+        tensorboard_log="logs/deathmatch9",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/deathmatch8", path="deathmatch_models8"
+        freq=10000, log_dir="logs/deathmatch9", path="deathmatch_models9"
     )
     model.learn(total_timesteps=steps * 10000, callback=callback)
