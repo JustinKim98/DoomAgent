@@ -6,16 +6,57 @@
 
 import os
 from random import choice
-
+import sys
 import vizdoom as vzd
 
-
 game = vzd.DoomGame()
+
+def set_game_env(mode):
+
+    model = None
+    if mode == "corridor":
+        #model = load_model(CORRIDOR_MODEL)
+        game.load_config(os.path.join(vzd.scenarios_path, "deadly_corridor.cfg"))
+        actions = [
+    [0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 1],
+    [0, 1, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0]
+]
+
+    elif mode == "dtc":
+        #model = load_model(DTC_MODEL)
+        game.load_config(os.path.join(vzd.scenarios_path, "defend_the_center.cfg"))
+        actions = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1]
+]
+
+
+    elif mode == "deathmatch":
+        #model = load_model(DEATHMATCH_MODEL)
+        game.load_config(os.path.join(vzd.scenarios_path, "deathmatch.cfg"))
+        actions = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1]
+]
+
+    return model, actions
 
 # Use CIG example config or your own.
 game.load_config(os.path.join(vzd.scenarios_path, "cig.cfg"))
 
-game.set_doom_map("map01")  # Limited deathmatch.
+#game.set_doom_map("map01")  # Limited deathmatch.
 # game.set_doom_map("map02")  # Full deathmatch.
 
 # Host game with options that will be used in the competition.
@@ -51,27 +92,19 @@ game.set_mode(vzd.Mode.ASYNC_PLAYER)
 
 game.init()
 
-# Three example sample actions
-actions = [
-    [1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0, 0, 0, 0, 0],
-]
 
-# Play until the game (episode) is over.
+model, actions = set_game_env(sys.argv[1])
+
 while not game.is_episode_finished():
 
     # Get the state.
     s = game.get_state()
 
-    # Analyze the state.
+    #action = model.predict(s)
+    action = choice(actions)
+    game.make_action(action)
 
-    # Make your action.
-    game.make_action(choice(actions))
-
-    # Check if player is dead
     if game.is_player_dead():
-        # Use this to respawn immediately after death, new state will be available.
         game.respawn_player()
 
 game.close()

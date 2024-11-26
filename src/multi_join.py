@@ -2,21 +2,63 @@
 
 import os
 import vizdoom as vzd
-import keyboard  # For handling key presses
+from pynput import keyboard
+from time import sleep
+import sys
 
 # Initialize the Doom game
 game = vzd.DoomGame()
 
-# Use CIG example config or your own.
-game.load_config(os.path.join(vzd.scenarios_path, "cig.cfg"))
+game.set_window_visible(True)
 
-game.set_doom_map("map01")  # Limited deathmatch.
+def set_player_env(mode):
+    if mode == "corridor":
+        game.load_config(os.path.join(vzd.scenarios_path, "deadly_corridor.cfg"))
+
+        current_action = [0] * 9
+        key_mapping = {
+            "space": [0, 0, 1, 0, 0, 0, 0],
+            "z": [0, 0, 0, 0, 0, 1, 0],
+            "c": [0, 0, 0, 0, 0, 0, 1],
+            "d": [0, 1, 0, 0, 0, 0, 0],
+            "a": [1, 0, 0, 0, 0, 0, 0],
+            "w": [0, 0, 0, 1, 0, 0, 0],
+            "s": [0, 0, 0, 0, 1, 0, 0]
+        }
+        return current_action, key_mapping
+
+    if mode == "dtc":
+        game.load_config(os.path.join(vzd.scenarios_path, "defend_the_center.cfg"))
+        current_action = [0] * 3
+        key_mapping = {
+            "a": [1, 0, 0],
+            "d": [0, 1, 0],
+            "space": [0, 0, 1]
+        }
+        return current_action, key_mapping
+
+    game.load_config(os.path.join(vzd.scenarios_path, "deathmatch.cfg"))
+    current_action = [0] * 8
+    key_mapping = {
+        "space": [1, 0, 0, 0, 0, 0, 0, 0],
+        "d": [0, 1, 0, 0, 0, 0, 0, 0],
+        "a": [0, 0, 1, 0, 0, 0, 0, 0],
+        "w": [0, 0, 0, 1, 0, 0, 0, 0],
+        "s": [0, 0, 0, 0, 1, 0, 0, 0],
+        "z": [0, 0, 0, 0, 0, 1, 0, 0],
+        "c": [0, 0, 0, 0, 0, 0, 1, 0],
+        "r": [0, 0, 0, 0, 0, 0, 0, 1]}
+
+    return current_action, key_mapping
+
+# Use CIG example config or your own.
+#game.load_config(os.path.join(vzd.scenarios_path, "cig.cfg"))
+
+#game.set_doom_map("map01")  # Limited deathmatch.
 # game.set_doom_map("map02")  # Full deathmatch.
 
 # Host game with options that will be used in the competition.
 game.add_game_args(
-    "-host 2 "
-    "-port 5029 "
     "+viz_connect_timeout 60 "
     "-deathmatch "
     "+timelimit 10.0 "
@@ -30,37 +72,49 @@ game.add_game_args(
 )
 
 game.add_game_args("+name Host +colorset 0")
-
+game.add_game_args("-join 127.0.0.1 -port 5029")
 game.set_mode(vzd.Mode.ASYNC_PLAYER)
+
+current_action, key_mapping = set_player_env(sys.argv[1])
 
 game.init()
 
-# Define key bindings for actions
-key_mapping = {
-    "w": [1, 0, 0, 0, 0, 0, 0, 0, 0],  # Move forward
-    "s": [0, 1, 0, 0, 0, 0, 0, 0, 0],  # Move backward
-    "a": [0, 0, 1, 0, 0, 0, 0, 0, 0],  # Turn left
-    "d": [0, 0, 0, 1, 0, 0, 0, 0, 0],  # Turn right
-    "space": [0, 0, 0, 0, 1, 0, 0, 0, 0],  # Attack
-    "shift": [0, 0, 0, 0, 0, 1, 0, 0, 0],  # Use
-}
 
-# Play until the game (episode) is over.
+
+def on_press(key):
+    global current_action
+    try:
+        # Check if the pressed key is in the mapping
+        key_str = key.char if hasattr(key, 'char') else key.name
+        if key_str in key_mapping:
+            current_action = key_mapping[key_str]
+
+    except AttributeError:
+        key_str = key.name
+        if key_str in key_mapping:
+            current_action = key_mapping[key_str]
+
+def on_release(key):
+    global current_action
+    current_action = [0] * len(current_action)  #reset
+
+# Start the keyboard listener
+listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+listener.start()
+
 while not game.is_episode_finished():
+
     if game.is_player_dead():
         game.respawn_player()
 
-    # Get the state.
+    # Get the state
     s = game.get_state()
 
-    # Wait for user input and map it to actions
-    action = [0] * 9  # Default action is no-op
-    for key, mapped_action in key_mapping.items():
-        if keyboard.is_pressed(key):
-            action = mapped_action
-            break
+    game.make_action(current_action)
 
-    # Perform the action
-    game.make_action(action)
+    #add a small delay to reduce CPU usage
+    sleep(0.05)
+
+
 
 game.close()
