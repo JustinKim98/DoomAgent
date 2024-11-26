@@ -50,7 +50,9 @@ class BaseEnv(Env):
         self.game.init()
 
         # Frame buffer settings
-        self.frame_storage_size = int((frame_buffer_size*(frame_buffer_size-1))/2) + 1
+        self.frame_storage_size = (
+            int((frame_buffer_size * (frame_buffer_size - 1)) / 2) + 1
+        )
         self.frame_buffer_size = frame_buffer_size
         self.frame_buffer = [
             np.zeros([3, 240, 320], dtype=np.uint8)

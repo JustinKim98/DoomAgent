@@ -65,11 +65,10 @@ if __name__ == "__main__":
         features_extractor_kwargs=dict(features_dim=1024),
         net_arch=dict(
             activation_fn=torch.nn.Tanh,
-            net_arch=
-                dict(
-                    vf=[1024, 512, 512, 256, 256, 256, 128, 64],
-                    pi=[1024, 512, 512, 256, 256, 256, 128, 64],
-                ),
+            net_arch=dict(
+                vf=[1024, 512, 512, 256, 256, 256, 128, 64],
+                pi=[1024, 512, 512, 256, 256, 256, 128, 64],
+            ),
         ),
     )
 
@@ -78,15 +77,15 @@ if __name__ == "__main__":
         policy_kwargs=policy_kwargs,
         env=vec_env,
         verbose=True,
-        learning_rate=1e-6*2,
+        learning_rate=1e-6 * 1,
         batch_size=64,
-        gamma=0.995,
+        gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/deathmatch9",
+        tensorboard_log="logs/deathmatch11",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/deathmatch9", path="deathmatch_models9"
+        freq=10000, log_dir="logs/deathmatch11", path="deathmatch_models11"
     )
     model.learn(total_timesteps=steps * 10000, callback=callback)
