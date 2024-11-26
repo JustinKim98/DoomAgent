@@ -17,6 +17,7 @@ class BaseEnv(Env):
         shoot_opponent_reward=50,
         kill_opponent_reward=100,
         exploration_rate=0.1,
+        infinite_run=False,
     ):
         super().__init__()
 
@@ -48,14 +49,16 @@ class BaseEnv(Env):
 
         # Initialize vizddom environment
         self.game.init()
-        img = cv2.resize(
-            self.game.get_state().screen_buffer,
-            None,
-            fx=0.5,
-            fy=0.5,
-            interpolation=cv2.INTER_LINEAR,
+
+        # Frame buffer settings
+        self.frame_storage_size = (
+            int((frame_buffer_size * (frame_buffer_size - 1)) / 2) + 1
         )
-        plt.imsave("state.png", img)
+        self.frame_buffer_size = frame_buffer_size
+        self.frame_buffer = [
+            np.zeros([3, 240, 320], dtype=np.uint8)
+            for i in range(0, self.frame_storage_size)
+        ]
 
         # Space configurations
         self.observation_space = Box(
@@ -70,6 +73,7 @@ class BaseEnv(Env):
         self.shoot_opponent_reward = shoot_opponent_reward
         self.kill_opponent_reward = kill_opponent_reward
         self.exploration_rate = exploration_rate
+        self.infinite_run = infinite_run
 
         # Game variable configurations
         self.maximum_steps = 500000
@@ -82,19 +86,13 @@ class BaseEnv(Env):
         self.num_kills = 0
         self.prev_fragcount = 0
 
-        self.frame_buffer_size = frame_buffer_size
-        self.frame_buffer = [
-            np.zeros([3, 240, 320], dtype=np.uint8)
-            for i in range(0, self.frame_buffer_size)
-        ]
-
     def step(self, action):
         if np.random.uniform(0, 1) < self.exploration_rate:
             action = np.random.choice(self.action_space_size, 1)[0]
 
         self.actions[action] = 1
         self.game.set_action(self.actions)
-        self.game.advance_action(4)
+        self.game.advance_action(self.tics)
         reward = self.game.get_last_reward()
         self.actions[action] = 0
 
@@ -132,7 +130,7 @@ class BaseEnv(Env):
         self.prev_damage_given = cur_damage_given
 
         is_terminated = self.game.is_episode_finished()
-        is_truncated = self.step_cnt > self.maximum_steps
+        is_truncated = not self.infinite_run and self.step_cnt > self.maximum_steps
 
         if is_terminated or is_truncated:
             if is_truncated:
@@ -175,11 +173,17 @@ class BaseEnv(Env):
         )
         img = np.transpose(img, [2, 0, 1])
 
-        for i in range(0, self.frame_buffer_size - 1):
+        for i in range(0, self.frame_storage_size - 1):
             self.frame_buffer[i] = self.frame_buffer[i + 1]
-        self.frame_buffer[self.frame_buffer_size - 1] = img
+        self.frame_buffer[self.frame_storage_size - 1] = img
 
-        return np.concatenate(self.frame_buffer, axis=0)
+        cnt = 0
+        env_frames = list()
+        for i in range(0, self.frame_buffer_size):
+            cnt += i
+            env_frames.append(self.frame_buffer[cnt])
+
+        return np.concatenate(env_frames, axis=0)
 
     def wrap_state(self, state: vzd.GameState):
         wrapped_state = self.update_frame_buffer(state)
@@ -312,7 +316,7 @@ class ContinuousEnv(Env):
             reward += damage_given * 5
             print(f"Shot : {damage_given*5}")
 
-        if action[0] == 0 and damage_given == 0:
+        if action[0] == 1 and damage_given == 0:
             print("missed shot")
             reward -= 1
 
@@ -347,9 +351,9 @@ class ContinuousEnv(Env):
     def reset(self):
         self.game.new_episode()
         self.step_cnt = 0
-        self.total_reward = 0
         self.num_hits = 0
         self.num_taken_hits = 0
+        self.total_reward = 0
         self.prev_damage = 0
         self.prev_damage_given = 0
         self.num_kills = 0

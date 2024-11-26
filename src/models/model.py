@@ -8,7 +8,6 @@ class PolicyModel(BaseFeaturesExtractor):
         super(PolicyModel, self).__init__(observation_space, features_dim)
         input_channels = observation_space.shape[0]
 
-        # base_channel_size = 16
         base_channel_size = 32
 
         # vzd.Button.ALTATTACK,
@@ -39,9 +38,9 @@ class PolicyModel(BaseFeaturesExtractor):
         self.relu4 = torch.nn.LeakyReLU()
 
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(38400, 1024)
+        self.linear1 = torch.nn.Linear(38400, 4096)
         self.relu4 = torch.nn.LeakyReLU()
-        self.linear2 = torch.nn.Linear(1024, features_dim)
+        self.linear2 = torch.nn.Linear(4096, features_dim)
         self.relu5 = torch.nn.LeakyReLU()
 
     def forward(self, state_input: torch.Tensor):

@@ -1,44 +1,63 @@
 import vizdoom as vzd
+import torch
 from doomenv import env
 from models import model
 from stable_baselines3 import PPO
-from stable_baselines3.common.env_util import make_vec_env
+
+
+class DeathmatchAgent:
+    def __init__(self, model_path, frame_buffer_size=6):
+        self.model_path = model_path
+        self.allowed_buttons = [
+            vzd.Button.ATTACK,
+            vzd.Button.MOVE_RIGHT,
+            vzd.Button.MOVE_LEFT,
+            vzd.Button.MOVE_UP,
+            vzd.Button.MOVE_DOWN,
+            vzd.Button.TURN_LEFT,
+            vzd.Button.TURN_RIGHT,
+            vzd.Button.RELOAD,
+        ]
+
+        policy_kwargs = dict(
+            features_extractor_class=model.PolicyModel,
+            features_extractor_kwargs=dict(features_dim=1024),
+            net_arch=dict(
+                activation_fn=torch.nn.Tanh,
+                net_arch=dict(
+                    vf=[1024, 512, 512, 256, 256, 256, 128, 64],
+                    pi=[1024, 512, 512, 256, 256, 256, 128, 64],
+                ),
+            ),
+        )
+        self.env = env.BaseEnv(
+            "scenarios/deathmatch.cfg", self.allowed_buttons, frame_buffer_size
+        )
+        self.model = PPO.load(
+            self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
+        )
+        self.is_done = False
+        self.action = 0
+
+    def step(self):
+        if self.is_done:
+            return (0, is_done)
+        state, reward, is_done, _ = self.env.step(self.action)
+        self.action = self.model.predict(state)
+        return (reward, is_done)
+
+    def reset(self):
+        self.env.reset()
+        self.is_done = False
+        self.action = 0
 
 
 if __name__ == "__main__":
-    print("loaded model!")
-    allowed_actions = [
-        vzd.Button.ATTACK,
-        vzd.Button.MOVE_RIGHT,
-        vzd.Button.MOVE_LEFT,
-        vzd.Button.MOVE_UP,
-        vzd.Button.MOVE_DOWN,
-        vzd.Button.TURN_LEFT,
-        vzd.Button.TURN_RIGHT,
-        # vzd.Button.ALTATTACK,
-        vzd.Button.RELOAD,
-    ]
-
-    env = env.BaseEnv("scenarios/deathmatch.cfg", allowed_actions, frame_buffer_size=4)
-    policy_kwargs = dict(
-        features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=512),
-    )
-    model = PPO.load(
-        "downloaded_models/deathmatch4/model_iter_130000.zip",
-        env=env,
-        custom_objects=policy_kwargs,
-        device="auto",
-    )
-
-    env.reset()
-    is_done = False
-    action = 0
+    agent = DeathmatchAgent("downloaded_models/deathmatch11/model_iter_3700.0")
 
     for i in range(0, 10):
         print(f"episode : {i}")
-        while not is_done:
-            state, reward, is_done, _ = env.step(action)
-            action = model.predict(state)
-        env.reset()
         is_done = False
+        while not is_done:
+            reward, is_done = agent.step()
+        agent.reset()

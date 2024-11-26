@@ -104,6 +104,7 @@ while not game.is_episode_finished():
     action = choice(actions)
     game.make_action(action)
 
+
     if game.is_player_dead():
         game.respawn_player()
 
