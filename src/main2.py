@@ -96,12 +96,12 @@ class DoomEnv(Env):
             ammo_delta = self.ammo - ammo
             self.ammo = ammo
 
-            reward += damage_taken_delta * -10
-            reward += hitcount_delta * 100
-            reward += ammo_delta * -40
+            reward += damage_taken_delta * -20
+            reward += hitcount_delta * 200
+            reward += ammo_delta * -20
 
             if health <= 0:
-                reward += -100
+                reward += -150
 
             info = {
                 "health": health,
@@ -266,6 +266,10 @@ if __name__ == "__main__":
     total_timesteps = 2048 * 1500  
 
     model.learn(total_timesteps=total_timesteps, callback=epoch_logger)
+
+    # Sauvegarder le modèle entraîné
+    model.save("trained_agent")
+    print("Model saved as trained_agent.zip")
 
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
     print(f"Mean reward: {mean_reward} +/- {std_reward}")
