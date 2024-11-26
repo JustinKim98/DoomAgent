@@ -1,3 +1,4 @@
+import time
 from vizdoom import *
 import vizdoom as vzd
 import os
@@ -6,10 +7,11 @@ import cv2
 from gym import Env
 from gym.spaces import Discrete, Box
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 import matplotlib.pyplot as plt
-
+import torch
+from stable_baselines3.common.callbacks import BaseCallback
+import shutil
 
 class DoomEnv(Env):
     def __init__(self, scenario, initial_difficulty=1):
@@ -18,13 +20,14 @@ class DoomEnv(Env):
         self.difficulty = initial_difficulty
         self.init_game()
 
-        self.observation_space = Box(low=0, high=255, shape=(100, 160, 1), dtype=np.uint8)
+        self.observation_space = Box(low=0, high=255, shape=(3, 100, 160), dtype=np.uint8)
         self.action_space = Discrete(len(self.game.get_available_buttons()))
         self.previous_health = 100
         self.hitcount = 0
         self.ammo = 52
-        self.no_damage_steps = 0  # Counter for steps without taking damage
-        self.safe_to_move_forward = False
+        self.previous_vest_distance = None
+        self.detected_enemies = 0
+        self.consecutive_wins = 0  # Ajout du compteur de victoires consécutives
 
     def init_game(self):
         self.game = DoomGame()
@@ -32,6 +35,8 @@ class DoomEnv(Env):
         self.game.set_sound_enabled(True)
         self.game.set_console_enabled(False)
         self.game.set_render_all_frames(False)
+        self.game.set_labels_buffer_enabled(True)
+        self.game.set_depth_buffer_enabled(True)
         self.game.set_doom_skill(self.difficulty)
         self.game.set_available_buttons([
             vzd.Button.MOVE_FORWARD,
@@ -48,68 +53,115 @@ class DoomEnv(Env):
 
     def step(self, action):
         actions = np.eye(7, dtype=np.uint8)
-        movement_reward = self.game.make_action(actions[action], 4) # Repeat each action for 4 frames
-        reward = movement_reward 
+        movement_reward = self.game.make_action(actions[action], 4)
+        reward = movement_reward
 
-        if self.game.get_state(): # Check if episode is still running
-            state = self.game.get_state().screen_buffer # Get current game state
-            state = self._process_observation(state) # Process observation
+        if self.game.get_state():
+            state = self.game.get_state()
+            screen_buffer = state.screen_buffer
+            screen_buffer = self._process_observation(screen_buffer)
 
-            # Get available game variables
-            game_vars = self.game.get_state().game_variables # Health, Hits, Ammo
-            health = game_vars[0] if len(game_vars) > 0 else self.previous_health # Get health if available
-            hitcount = game_vars[1] if len(game_vars) > 1 else self.hitcount # Get hitcount if available
-            ammo = game_vars[2] if len(game_vars) > 2 else self.ammo # Get ammo
+            labels = state.labels
+            depth_buffer = state.depth_buffer
 
-            # Calculate changes in health, hits, and ammo
-            damage_taken_delta = self.previous_health - health # Calculate damage taken
-            self.previous_health = health # Update previous health
+            vest_distance = None
+            for label in labels:
+                if label.object_name == "GreenArmor":
+                    # print(f"Vest detected at: {label.x}, {label.y}")
+                    vest_distance = np.sqrt(label.x ** 2 + label.y ** 2)
+                    # print(f"Distance: {vest_distance}")
+                    break
+                
 
-            hitcount_delta = hitcount - self.hitcount # Calculate hits
-            self.hitcount = hitcount # Update hitcount
+            if vest_distance is not None:
+                if self.previous_vest_distance is not None:
+                    distance_delta = self.previous_vest_distance - vest_distance
+                    if distance_delta > 0:
+                        reward += 10
+                    elif distance_delta < 0:
+                        reward += -10
+                self.previous_vest_distance = vest_distance
+            else :
+                # print("Vest not detected")
+                reward += -40
 
-            ammo_delta = self.ammo - ammo # Calculate ammo
-            self.ammo = ammo # Update ammo
+            game_vars = state.game_variables
+            health = game_vars[0] if len(game_vars) > 0 else self.previous_health
+            hitcount = game_vars[1] if len(game_vars) > 1 else self.hitcount
+            ammo = game_vars[2] if len(game_vars) > 2 else self.ammo
+            damage_taken_delta = self.previous_health - health
+            self.previous_health = health
+            hitcount_delta = hitcount - self.hitcount
+            self.hitcount = hitcount
+            ammo_delta = self.ammo - ammo
+            self.ammo = ammo
 
-            # Rewards and penalties based on actions
-            reward += damage_taken_delta * -10  # Penalty for health loss
-            reward += hitcount_delta * 100  # Reward for hitting enemies
-            reward += ammo_delta * -10  # Penalty for wasting ammo
+            reward += damage_taken_delta * -10
+            reward += hitcount_delta * 100
+            reward += ammo_delta * -40
 
-            # Track no damage steps to enable moving forward
-            if damage_taken_delta > 0:
-                self.no_damage_steps = 0  # Reset counter if damage is taken
-                self.safe_to_move_forward = False
-            else:
-                self.no_damage_steps += 1
+            if health <= 0:
+                reward += -100
 
-            if self.no_damage_steps > 10:
-                self.safe_to_move_forward = True
-
-            # Reward or penalize moving forward based on safety
-            if action == 0:  # MOVE_FORWARD
-                if self.safe_to_move_forward:
-                    reward += 500  # Reward for moving forward when safe
-                else:
-                    reward -= 20  # Penalty for moving forward prematurely
-
-            info = {"health": health, "hitcount": hitcount, "safe_to_move": self.safe_to_move_forward}
+            info = {
+                "health": health,
+                "hitcount": hitcount,
+                "ammo": ammo,
+                "vest_distance": vest_distance,
+                "detected_enemies": self.detected_enemies
+            }
         else:
-            state = np.zeros(self.observation_space.shape)
-            info = {"health": 0, "hitcount": 0, "safe_to_move": False}
+            screen_buffer = np.zeros(self.observation_space.shape)
+            info = {
+                "health": 0,
+                "hitcount": 0,
+                "ammo": 0,
+                "vest_distance": None,
+                "detected_enemies": self.detected_enemies
+            }
 
         done = self.game.is_episode_finished()
-        return state, reward, done, info
+        return screen_buffer, reward, done, info
+
+    def check_victory(self):
+        if self.game.is_episode_finished():
+            state = self.game.get_state()
+            if state:
+                game_vars = state.game_variables
+                health = game_vars[0] if len(game_vars) > 0 else 0  # HEALTH
+                ammo = game_vars[2] if len(game_vars) > 2 else 0  # AMMO
+
+                # Critères de victoire
+                if health > 0 and ammo > 0:
+                    return True  # Victoire
+        return False  # Défaite
+
+
 
     def reset(self):
+        # Vérifiez si l'agent a gagné
+        if self.check_victory():
+            self.consecutive_wins += 1
+            print(f"Victory! Consecutive wins: {self.consecutive_wins}")
+            if self.consecutive_wins >= 5:
+                print(f"Agent has won 5 consecutive episodes. Increasing difficulty.")
+                self.increase_difficulty()
+                self.consecutive_wins = 0
+        else:
+            # print("Defeat. Resetting consecutive wins.")
+            self.consecutive_wins = 0
+
+        # Réinitialisez l'environnement
         self.previous_health = 100
         self.hitcount = 0
         self.ammo = 52
-        self.no_damage_steps = 0
-        self.safe_to_move_forward = False
+        self.previous_vest_distance = None
+        self.detected_enemies = 0
         self.game.new_episode()
         state = self.game.get_state().screen_buffer
         return self._process_observation(state)
+
+
 
     def increase_difficulty(self):
         if self.difficulty < 5:
@@ -118,72 +170,108 @@ class DoomEnv(Env):
             self.init_game()
 
     def _process_observation(self, observation):
-        gray = cv2.cvtColor(np.moveaxis(observation, 0, -1), cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (160, 100), interpolation=cv2.INTER_AREA)
-        return np.expand_dims(resized, axis=-1)
+        resized = cv2.resize(np.moveaxis(observation, 0, -1), (160, 100), interpolation=cv2.INTER_AREA)
+        return np.moveaxis(resized, -1, 0)  # Convert back to channels-first
+
+
+
+
 
     def close(self):
         self.game.close()
 
+class EpochLoggerCallback(BaseCallback):
+    def __init__(self, verbose=1, n_steps_per_epoch=2048, env=None):
+        super(EpochLoggerCallback, self).__init__(verbose)
+        self.n_steps_per_epoch = n_steps_per_epoch
+        self.current_epoch = 0
+        self.env = env  # Référence à l'environnement
 
-class DifficultyProgressCallback(BaseCallback):
-    def __init__(self, env, verbose=1):
-        super(DifficultyProgressCallback, self).__init__(verbose)
-        self.env = env
-        self.consecutive_wins = 0
-        self.epoch_rewards = []
-        self.epoch_timesteps = []
-        self.epoch = 0
+    def _on_step(self) -> bool:
+        # Calculer l'époque actuelle
+        self.current_epoch = self.num_timesteps // self.n_steps_per_epoch
 
-    def _on_step(self):
-        n_steps = self.locals["self"].n_steps
-        if self.n_calls % n_steps == 0:
-            self.epoch += 1
-            rewards = self.locals["rollout_buffer"].rewards
-            mean_reward = np.mean(rewards)
-            self.epoch_rewards.append(mean_reward)
-            self.epoch_timesteps.append(self.n_calls)
+        # Si une époque est terminée
+        if self.num_timesteps % self.n_steps_per_epoch == 0:
             if self.verbose:
-                print(f"[Epoch {self.epoch}] Timesteps: {self.n_calls}, Mean Reward: {mean_reward:.2f}")
+                print(f"Epoch {self.current_epoch} completed.")
 
-            # Check if agent succeeded
-            ep_info = self.locals.get("infos", [])
-            if ep_info and ep_info[-1].get("health", 0) > 0:
-                self.consecutive_wins += 1
-            else:
-                self.consecutive_wins = 0
-
-            # Increase difficulty if agent wins 5 times in a row
-            if self.consecutive_wins >= 5:
-                print(f"Agent mastered difficulty {self.env.difficulty}. Increasing difficulty!")
-                self.env.increase_difficulty()
-                self.consecutive_wins = 0
+                # Incrémenter la difficulté toutes les 500 époques
+                if self.current_epoch % 500 == 0 and self.env.difficulty < 3:
+                    self.env.difficulty += 1
+                    self.env.init_game()  # Recharger le jeu avec la nouvelle difficulté
+                    print(f"Difficulty increased to {self.env.difficulty}")
 
         return True
 
-    def _on_training_end(self):
-        if self.verbose:
-            print("Training Finished!")
-            print(f"Total Epochs: {self.epoch}, Final Mean Reward: {self.epoch_rewards[-1]:.2f}")
+
+
+
+
+def record_video(env, model, video_path, video_fps=30, num_episodes=6):
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(video_path, fourcc, video_fps, (320, 200), isColor=True)
+
+    for episode in range(num_episodes):
+        obs = env.reset()
+        done = False
+        while not done:
+            frame = np.moveaxis(obs, 0, -1)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            frame = cv2.resize(frame, (320, 200), interpolation=cv2.INTER_AREA)
+            out.write(frame)
+
+            action, _ = model.predict(obs)
+            obs, _, done, _ = env.step(action)
+
+    out.release()
+    print(f"Video recorded at: {video_path}")
+
+    # Vérifiez si la vidéo a une taille correcte
+    if os.path.exists(video_path):
+        size = os.path.getsize(video_path)
+        if size > 0:
+            print(f"Video successfully created with size: {size} bytes.")
+        else:
+            print("Error: Video file is empty.")
+    else:
+        print("Error: Video file was not created.")
 
 
 if __name__ == "__main__":
     scenario_path = "scenarios/deadly_corridor.cfg"
     env = DoomEnv(scenario_path)
 
-    model = PPO("CnnPolicy", env, verbose=1, learning_rate=0.00001, n_steps=8192, batch_size=64, n_epochs=10, clip_range=0.1, gamma=0.95, gae_lambda=0.9, device="cpu")
+    if not torch.cuda.is_available():
+        print("Warning: CUDA is not available. The code will run on the CPU.")
 
-    progress_callback = DifficultyProgressCallback(env, verbose=1)
+    model = PPO(
+        "CnnPolicy",
+        env,
+        verbose=1,
+        learning_rate=0.00001,
+        n_steps=2048,  # Aligné avec n_steps_per_epoch pour un suivi cohérent
+        batch_size=256,  # Divise exactement n_steps=2048
+        n_epochs=4,  # Nombre d'itérations sur chaque lot
+        clip_range=0.1,
+        gamma=0.95,
+        gae_lambda=0.9,
+        device="cuda"
+    )
 
-    model.learn(total_timesteps=100000, callback=progress_callback)
+    # Initialiser le callback avec l'environnement
+    epoch_logger = EpochLoggerCallback(verbose=1, n_steps_per_epoch=2048, env=env)
+
+    # Total timesteps pour 1500 époques
+    total_timesteps = 2048 * 1500  
+
+    model.learn(total_timesteps=total_timesteps, callback=epoch_logger)
 
     mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
     print(f"Mean reward: {mean_reward} +/- {std_reward}")
 
-    plt.plot(progress_callback.epoch_timesteps, progress_callback.epoch_rewards)
-    plt.xlabel("Timesteps")
-    plt.ylabel("Mean Reward")
-    plt.title("Learning Progress Over Epochs")
-    plt.show()
+    video_path = os.path.abspath("trained_agent_video.mp4")
+    record_video(env, model, video_path)
 
     env.close()
+ 
