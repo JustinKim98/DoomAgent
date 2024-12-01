@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 
 
 class DeathmatchAgent:
-    def __init__(self, model_path, frame_buffer_size=4):
+    def __init__(self, model_path, frame_buffer_size=6):
         self.model_path = model_path
         self.allowed_buttons = [
             vzd.Button.ATTACK,
@@ -31,7 +31,7 @@ class DeathmatchAgent:
             ),
         )
         self.env = env.BaseEnv(
-            "scenarios/deathmatch.cfg", self.allowed_actions, frame_buffer_size
+            "scenarios/deathmatch.cfg", self.allowed_buttons, frame_buffer_size
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
@@ -47,13 +47,13 @@ class DeathmatchAgent:
         return (reward, is_done)
 
     def reset(self):
-        env.reset()
+        self.env.reset()
         self.is_done = False
         self.action = 0
 
 
 if __name__ == "__main__":
-    agent = DeathmatchAgent("deathmatch_models11/model_iter_4500.0")
+    agent = DeathmatchAgent("downloaded_models/deathmatch11/model_iter_3700.0")
 
     for i in range(0, 10):
         print(f"episode : {i}")
