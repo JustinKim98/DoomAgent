@@ -17,6 +17,7 @@ class BaseEnv(Env):
         shoot_opponent_reward=50,
         kill_opponent_reward=100,
         exploration_rate=0.1,
+        infinite_run=False,
     ):
         super().__init__()
 
@@ -72,6 +73,7 @@ class BaseEnv(Env):
         self.shoot_opponent_reward = shoot_opponent_reward
         self.kill_opponent_reward = kill_opponent_reward
         self.exploration_rate = exploration_rate
+        self.infinite_run = infinite_run
 
         # Game variable configurations
         self.maximum_steps = 500000
@@ -128,7 +130,7 @@ class BaseEnv(Env):
         self.prev_damage_given = cur_damage_given
 
         is_terminated = self.game.is_episode_finished()
-        is_truncated = self.step_cnt > self.maximum_steps
+        is_truncated = not self.infinite_run and self.step_cnt > self.maximum_steps
 
         if is_terminated or is_truncated:
             if is_truncated:

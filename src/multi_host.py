@@ -65,6 +65,7 @@ while not game.is_episode_finished():
     s = game.get_state()
 
     # Analyze the state.
+    agent.get_action(s)
 
     # Make your action.
     game.make_action(choice(actions))
