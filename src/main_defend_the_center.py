@@ -131,7 +131,7 @@ class SaveModelCallback(BaseCallback):
     def _on_step(self) -> bool:
         if self.n_calls % self.save_freq == 0:
             save_file = f"{self.save_path}_step_{self.n_calls}.zip"
-            self.model.save(save_file)
+            #self.model.save(save_file)
             if self.verbose > 0:
                 print(f"Model saved to {save_file}")
         return True
@@ -148,8 +148,8 @@ model = PPO(
     tensorboard_log="./ppo_doom_tensorboard/"
 )
 
-# Define save parameters
-save_freq = 5000  # Save every 10,000 steps
+
+save_freq = 10000  # Save every 10,000 steps ( for debugging)
 save_path = "ppo_defend_center_checkpoint"
 
 # Create and use the callback
