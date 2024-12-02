@@ -6,7 +6,7 @@ import vizdoom as vzd
 # Initialize the Doom game
 game = vzd.DoomGame()
 
-# Use the defend_the_center config and WAD
+# Load the defend_the_center config and WAD
 game.load_config("defend_the_center.cfg")
 game.set_doom_scenario_path("defend_the_center.wad")
 
@@ -22,7 +22,7 @@ game.add_game_args(
     "+viz_nocheat 1"  # Disable cheats
 )
 
-# Name the agent and set color
+# Name the agent and set its color
 game.add_game_args("+name Host +colorset 0")
 
 # Set game mode for multiplayer
