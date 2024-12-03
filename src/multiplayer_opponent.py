@@ -1,11 +1,15 @@
+#!/usr/bin/env python3
+
+import os
 import vizdoom as vzd
+import numpy as np
 import torch
-from doomenv import env
+from doomenv import multiplayer_env
 from models import model
 from stable_baselines3 import PPO
 
 
-class DeathmatchAgent:
+class MultiplayerAgent:
     def __init__(self, model_path, frame_buffer_size=6, game=None):
         self.model_path = model_path
         self.allowed_buttons = [
@@ -31,11 +35,11 @@ class DeathmatchAgent:
                 ),
             ),
         )
-        self.env = env.BaseEnv(
+        self.env = multiplayer_env.BaseEnv(
             "multi.cfg", self.allowed_buttons, frame_buffer_size, game=self.game
         )
         self.model = PPO.load(
-            self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
+            self.model_path, env=self.env, custom_object=policy_kwargs, device="cpu"
         )
         self.is_done = False
         self.action = 0
@@ -54,10 +58,50 @@ class DeathmatchAgent:
 
 
 if __name__ == "__main__":
-    agent = DeathmatchAgent("models/model_iter_1100.0")
+    # Initialize the Doom game
+    game = vzd.DoomGame()
+    game.set_window_visible(True)
 
-    for i in range(0, 10):
-        print(f"episode : {i}")
+    # Use CIG example config or your own.
+    game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
+    # game.set_doom_map("map02")  # Full deathmatch.
+
+    # Host game with options that will be used in the competition.
+    game.add_game_args(
+        "+viz_connect_timeout 60 "
+        "-deathmatch "
+        "+timelimit 10.0 "
+        "+sv_forcerespawn 1 "
+        "+sv_noautoaim 1 "
+        "+sv_respawnprotect 1 "
+        "+sv_spawnfarthest 1 "
+        "+sv_nocrouch 1 "
+        "+viz_respawn_delay 10 "
+        "+viz_nocheat 1"
+    )
+
+    game.add_game_args("+name Host +colorset 0")
+    game.add_game_args("-join 127.0.0.1 -port 5029")
+
+    game.set_mode(vzd.Mode.ASYNC_PLAYER)
+    allowed_actions = [
+        vzd.Button.ATTACK,
+        vzd.Button.MOVE_RIGHT,
+        vzd.Button.MOVE_LEFT,
+        vzd.Button.MOVE_FORWARD,
+        vzd.Button.MOVE_BACKWARD,
+        vzd.Button.TURN_LEFT,
+        vzd.Button.TURN_RIGHT,
+        vzd.Button.RELOAD,
+    ]
+    game.set_available_buttons(allowed_actions)
+
+    agent = MultiplayerAgent(
+        "downloaded_models/deathmatch8/model_iter_4000.0", game=game
+    )
+
+    # Play until the game (episode) is over.
+    while True:
         is_done = False
         while not is_done:
             reward, is_done = agent.step()
