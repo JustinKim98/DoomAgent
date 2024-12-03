@@ -18,11 +18,16 @@ class BaseEnv(Env):
         kill_opponent_reward=100,
         exploration_rate=0.1,
         infinite_run=False,
+        game=None,
     ):
         super().__init__()
 
         # Set game options
-        self.game = vzd.DoomGame()
+        if game is None:
+            self.game = vzd.DoomGame()
+        else:
+            self.game = game
+
         self.game.load_config(scenario)
         self.game.set_sound_enabled(False)
         self.game.set_console_enabled(True)
@@ -46,6 +51,24 @@ class BaseEnv(Env):
         self.game.set_render_particles(False)
         self.game.set_render_decals(False)
         self.game.set_doom_skill(1)
+
+        self.game.add_game_args(
+            "+viz_connect_timeout 60 "
+            "-deathmatch "
+            "+timelimit 10.0 "
+            "+sv_forcerespawn 1 "
+            "+sv_noautoaim 1 "
+            "+sv_respawnprotect 1 "
+            "+sv_spawnfarthest 1 "
+            "+sv_nocrouch 1 "
+            "+viz_respawn_delay 10 "
+            "+viz_nocheat 1"
+            "+name Host +colorset 0"
+        )
+
+        if game is not None:
+            print("Multiplayer configurations applied")
+            self.game.add_game_args("-host 2" "-port 5029 ")
 
         # Initialize vizddom environment
         self.game.init()
