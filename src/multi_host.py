@@ -30,7 +30,7 @@ def set_game_env(mode, model_path):
 
     elif mode == "deathmatch":
         #model = load_model(DEATHMATCH_MODEL)
-        model = DeathmatchAgent(model_path)
+        model = DeathmatchAgent(model_path, game)
         #game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
         actions = np.eye(8)
 

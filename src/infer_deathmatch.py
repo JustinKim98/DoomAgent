@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 
 
 class DeathmatchAgent:
-    def __init__(self, model_path, frame_buffer_size=6):
+    def __init__(self, model_path,game ,frame_buffer_size=6):
         self.model_path = model_path
         self.allowed_buttons = [
             vzd.Button.ATTACK,
@@ -31,7 +31,7 @@ class DeathmatchAgent:
             ),
         )
         self.env = env.BaseEnv(
-            "deathmatch.cfg", self.allowed_buttons, frame_buffer_size
+            "deathmatch.cfg", self.allowed_buttons, frame_buffer_size , game = game
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
@@ -41,7 +41,7 @@ class DeathmatchAgent:
 
     def step(self):
         if self.is_done:
-            return (0, is_done)
+            return (0, self.is_done)
         state, reward, is_done, _ = self.env.step(self.action)
         self.action = self.model.predict(state)
         return (reward, is_done)

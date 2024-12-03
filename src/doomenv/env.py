@@ -18,11 +18,15 @@ class BaseEnv(Env):
         kill_opponent_reward=100,
         exploration_rate=0.1,
         infinite_run=False,
+        game = None
     ):
         super().__init__()
 
         # Set game options
-        self.game = vzd.DoomGame()
+        if game is None:
+            self.game = vzd.DoomGame()
+        else:
+            self.game = game
         self.game.load_config(scenario)
         self.game.set_sound_enabled(False)
         self.game.set_console_enabled(True)
