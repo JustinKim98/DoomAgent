@@ -67,7 +67,6 @@ game.add_game_args(
 
 game.add_game_args("+name Host +colorset 0")
 game.add_game_args("-join 127.0.0.1 -port 5029")
-# game.set_mode(vzd.Mode.ASYNC_PLAYER)
 
 current_action, key_mapping = set_player_env(sys.argv[1])
 

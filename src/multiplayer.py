@@ -47,17 +47,18 @@ if __name__ == "__main__":
         vzd.Button.RELOAD,
     ]
 
-    vec_env = make_vec_env(
-        lambda: multiplayer_env.BaseEnv(
-            "scenarios/deathmatch.cfg",
-            allowed_actions=allowed_actions,
-            frame_buffer_size=6,
-            living_reward=0.01,
-            kill_opponent_reward=100,
-            shoot_opponent_reward=70,
-            exploration_rate=0.05,
-        ),
-        2,
+    game = vzd.DoomGame()
+
+    env = multiplayer_env.BaseEnv(
+        "scenarios/multi.cfg",
+        allowed_actions=allowed_actions,
+        frame_buffer_size=6,
+        living_reward=-0.01,
+        kill_opponent_reward=100,
+        shoot_opponent_reward=70,
+        exploration_rate=0.05,
+        game=game,
+        configure_as_host=True,
     )
 
     policy_kwargs = dict(
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     model = PPO(
         policy=policies.ActorCriticCnnPolicy,
         policy_kwargs=policy_kwargs,
-        env=vec_env,
+        env=env,
         verbose=True,
         learning_rate=1e-6 * 5,
         batch_size=64,
@@ -88,4 +89,5 @@ if __name__ == "__main__":
     callback = SaveModelCallBack(
         freq=10000, log_dir="logs/multiplayer", path="multiplayer"
     )
+
     model.learn(total_timesteps=steps * 10000, callback=callback)

@@ -18,11 +18,17 @@ class BaseEnv(Env):
         kill_opponent_reward=100,
         exploration_rate=0.1,
         infinite_run=False,
+        game=None,
+        configure_as_host=False,
     ):
         super().__init__()
 
         # Set game options
-        self.game = vzd.DoomGame()
+        if game is None:
+            self.game = vzd.DoomGame()
+        else:
+            self.game = game
+
         self.game.load_config(scenario)
         self.game.set_sound_enabled(False)
         self.game.set_console_enabled(True)
@@ -45,14 +51,9 @@ class BaseEnv(Env):
         self.game.set_render_weapon(True)
         self.game.set_render_particles(False)
         self.game.set_render_decals(False)
-
-        self.game.set_mode(vzd.Mode.ASYNC_PLAYER)
         self.game.set_doom_skill(1)
 
-        # Add game variables
         self.game.add_game_args(
-            "-host 2 "
-            "-port 5029 "
             "+viz_connect_timeout 60 "
             "-deathmatch "
             "+timelimit 10.0 "
@@ -63,7 +64,12 @@ class BaseEnv(Env):
             "+sv_nocrouch 1 "
             "+viz_respawn_delay 10 "
             "+viz_nocheat 1"
+            "+name Host +colorset 0"
         )
+
+        if configure_as_host:
+            print("Multiplayer configurations applied")
+            self.game.add_game_args("-host 2" "-port 5029 ")
 
         # Initialize vizddom environment
         self.game.init()
@@ -92,12 +98,9 @@ class BaseEnv(Env):
         self.kill_opponent_reward = kill_opponent_reward
         self.exploration_rate = exploration_rate
         self.infinite_run = infinite_run
-        self.multiplayer = self.game.is_multiplayer_game()
-
-        print(f"Multiplayer : {self.multiplayer}")
 
         # Game variable configurations
-        self.maximum_steps = 500000
+        self.maximum_steps = 300
         self.step_cnt = 0
         self.num_hits = 0
         self.num_taken_hits = 0
@@ -163,6 +166,9 @@ class BaseEnv(Env):
                 True,
                 dict(),
             )
+
+        if self.step_cnt % 100 == 0:
+            print(f"steps : {self.step_cnt}")
 
         self.step_cnt += 1
 

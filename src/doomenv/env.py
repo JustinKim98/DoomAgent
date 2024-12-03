@@ -19,6 +19,7 @@ class BaseEnv(Env):
         exploration_rate=0.1,
         infinite_run=False,
         game=None,
+        configure_as_host=False,
     ):
         super().__init__()
 
@@ -66,7 +67,7 @@ class BaseEnv(Env):
             "+name Host +colorset 0"
         )
 
-        if game is not None:
+        if configure_as_host:
             print("Multiplayer configurations applied")
             self.game.add_game_args("-host 2" "-port 5029 ")
 
