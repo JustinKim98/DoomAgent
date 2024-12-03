@@ -28,7 +28,7 @@ def set_player_env(mode):
         return current_action, key_mapping
 
     if mode == "dtc":
-        game.load_config(os.path.join(vzd.scenarios_path, "defend_the_center.cfg"))
+        game.load_config(os.path.join(vzd.scenarios_path, "multi_duel.cfg"))
         current_action = [0] * 3
         key_mapping = {
             "a": [1, 0, 0],
@@ -37,7 +37,7 @@ def set_player_env(mode):
         }
         return current_action, key_mapping
 
-    game.load_config(os.path.join(vzd.scenarios_path, "deathmatch.cfg"))
+    game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
     current_action = [0] * 8
     key_mapping = {
         "space": [1, 0, 0, 0, 0, 0, 0, 0],
@@ -51,13 +51,9 @@ def set_player_env(mode):
 
     return current_action, key_mapping
 
-# Use CIG example config or your own.
-#game.load_config(os.path.join(vzd.scenarios_path, "cig.cfg"))
 
-#game.set_doom_map("map01")  # Limited deathmatch.
-# game.set_doom_map("map02")  # Full deathmatch.
+#game.set_doom_map("map01")
 
-# Host game with options that will be used in the competition.
 game.add_game_args(
     "+viz_connect_timeout 60 "
     "-deathmatch "
@@ -73,7 +69,7 @@ game.add_game_args(
 
 game.add_game_args("+name Host +colorset 0")
 game.add_game_args("-join 127.0.0.1 -port 5029")
-game.set_mode(vzd.Mode.ASYNC_PLAYER)
+#game.set_mode(vzd.Mode.ASYNC_PLAYER)
 
 current_action, key_mapping = set_player_env(sys.argv[1])
 
@@ -84,7 +80,7 @@ game.init()
 def on_press(key):
     global current_action
     try:
-        # Check if the pressed key is in the mapping
+        #check if the pressed key is in the mapping
         key_str = key.char if hasattr(key, 'char') else key.name
         if key_str in key_mapping:
             current_action = key_mapping[key_str]
@@ -98,7 +94,6 @@ def on_release(key):
     global current_action
     current_action = [0] * len(current_action)  #reset
 
-# Start the keyboard listener
 listener = keyboard.Listener(on_press=on_press, on_release=on_release)
 listener.start()
 
@@ -107,7 +102,6 @@ while not game.is_episode_finished():
     if game.is_player_dead():
         game.respawn_player()
 
-    # Get the state
     s = game.get_state()
 
     game.make_action(current_action)

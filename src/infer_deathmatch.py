@@ -31,7 +31,7 @@ class DeathmatchAgent:
             ),
         )
         self.env = env.BaseEnv(
-            "scenarios/deathmatch.cfg", self.allowed_buttons, frame_buffer_size
+            "deathmatch.cfg", self.allowed_buttons, frame_buffer_size
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
@@ -53,7 +53,7 @@ class DeathmatchAgent:
 
 
 if __name__ == "__main__":
-    agent = DeathmatchAgent("downloaded_models/deathmatch11/model_iter_3700.0")
+    agent = DeathmatchAgent("models/model_iter_1100.0")
 
     for i in range(0, 10):
         print(f"episode : {i}")
