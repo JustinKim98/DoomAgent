@@ -2,18 +2,28 @@ import subprocess
 import sys
 
 
+class ProccessRunner:
+    def __init__(self, args):
+        self.args = args
+
+    def run_process(self):
+        run_two_processes_with_args(self.args)
+
 def run_two_processes_with_args(args):
     # Define the commands for the two processes
-    command1 = ["python3", "src/multi_host.py"] + args
-    command2 = ["python3", "src/multi_join.py"] + args
-
+    command1 = ["python3", "multi_host.py"] + args
     # Start the processes
     process1 = subprocess.Popen(command1)
-    process2 = subprocess.Popen(command2)
 
     # Wait for them to finish
+    if args[0] == "multi":
+        command2 = ["python3", "multi_join.py"] + args
+        process2 = subprocess.Popen(command2)
+        process2.wait()
+
     process1.wait()
-    process2.wait()
+
+
 
 
 if __name__ == "__main__":

@@ -307,8 +307,13 @@ class AgentWrapper:
         Wrapper pour gérer l'entraînement, la sauvegarde et le chargement d'un agent.
         """
         self.env = env
+
+        if env == None:
+            self.env = DoomEnv("deadly_corridor.cfg")
+
         self.policy = policy
         self.device = device
+        self.action = 0
         if model_path and os.path.exists(model_path):
             print(f"Chargement du modèle depuis : {model_path}")
             self.model = PPO.load(model_path, env=self.env, device=self.device)
@@ -347,6 +352,15 @@ class AgentWrapper:
         Prédit une action à partir d'une observation.
         """
         return self.model.predict(observation)
+
+    def step(self):
+        state, reward, is_done, _ = self.env.step(self.action)
+        self.action = self.model.predict(state)
+
+        if is_done:
+            return 0, is_done
+
+        return reward, is_done
 
     @staticmethod
     def load(path, env=None, device="cuda"):
