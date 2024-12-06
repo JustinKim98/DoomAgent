@@ -11,10 +11,14 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import matplotlib.pyplot as plt
 import torch
 from stable_baselines3.common.callbacks import BaseCallback
+from torch.utils.tensorboard import SummaryWriter
 import shutil
+import matplotlib
+matplotlib.use("Agg")
+
 
 class DoomEnv(Env):
-    def __init__(self, scenario, initial_difficulty=3):
+    def __init__(self, scenario, initial_difficulty=2):
         super().__init__()
         self.scenario = scenario
         self.difficulty = initial_difficulty
@@ -28,6 +32,7 @@ class DoomEnv(Env):
         self.previous_vest_distance = None
         self.detected_enemies = 0
         self.consecutive_wins = 0  # Ajout du compteur de victoires consécutives
+        self.enemy_labels = ["Zombieman", "ShotgunGuy", "ChaingunGuy", "Imp", "Demon", "Spectre"]
 
     def init_game(self):
         self.game = DoomGame()
@@ -52,106 +57,96 @@ class DoomEnv(Env):
         self.game.init()
 
     def step(self, action):
-        actions = np.eye(7, dtype=np.uint8)
+        actions = np.eye(7, dtype=np.uint8)  
         movement_reward = self.game.make_action(actions[action], 4)
         reward = movement_reward
 
         if self.game.get_state():
             state = self.game.get_state()
-            screen_buffer = state.screen_buffer
-            screen_buffer = self._process_observation(screen_buffer)
-
+            screen_buffer = self._process_observation(state.screen_buffer)
             labels = state.labels
-            depth_buffer = state.depth_buffer
 
             vest_distance = None
+            self.detected_enemies = False
+
+            for label in labels:
+                if label.object_name in self.enemy_labels:
+                    self.detected_enemies = True
+                    # print(f"Enemy detected: {label.object_name}")
+                    break
+
+            # GreenArmor detection
             for label in labels:
                 if label.object_name == "GreenArmor":
-                    # print(f"Vest detected at: {label.x}, {label.y}")
                     vest_distance = np.sqrt(label.x ** 2 + label.y ** 2)
-                    # print(f"Distance: {vest_distance}")
+                    # print(f"GreenArmor detected at distance: {vest_distance}")
                     break
-                
+
+            if self.detected_enemies:
+                if action == 6:  # ATTACK
+                    reward += 50 
+                    # print("Attacking enemies!")
+                else:
+                    reward -= 25 
+                    # print("Ignoring enemies!")
+            elif action == 6:
+                reward -= 10
+                # print("No enemies to attack!")
 
             if vest_distance is not None:
                 if self.previous_vest_distance is not None:
                     distance_delta = self.previous_vest_distance - vest_distance
-                    if distance_delta > 0:
-                        reward += 10
-                    elif distance_delta < 0:
-                        reward += -10
+                    reward += 100 if distance_delta > 0 else -100
                 self.previous_vest_distance = vest_distance
-            else :
-                # print("Vest not detected")
-                reward += -40
 
+                # Reward for reaching the GreenArmor
+                threshold = 25
+                if vest_distance < threshold:
+                    reward += 200
+                    print("GreenArmor reached!")
+            else:
+                reward -= 40  # Penalty for not detecting the GreenArmor
+
+            # Health, hitcount, ammo
             game_vars = state.game_variables
             health = game_vars[0] if len(game_vars) > 0 else self.previous_health
-            hitcount = game_vars[1] if len(game_vars) > 1 else self.hitcount
-            ammo = game_vars[2] if len(game_vars) > 2 else self.ammo
             damage_taken_delta = self.previous_health - health
             self.previous_health = health
+
+            hitcount = game_vars[1] if len(game_vars) > 1 else self.hitcount
+            ammo = game_vars[2] if len(game_vars) > 2 else self.ammo
             hitcount_delta = hitcount - self.hitcount
-            self.hitcount = hitcount
             ammo_delta = self.ammo - ammo
-            self.ammo = ammo
 
-            reward += damage_taken_delta * -30
-            reward += hitcount_delta * 220
-            reward += ammo_delta * -1
-
+            reward += hitcount_delta * 80  
+            reward += ammo_delta * -10  
+            if damage_taken_delta > 0:
+                reward -= damage_taken_delta * 10  
             if health <= 0:
-                reward += -150
+                reward -= 150  
+
+            self.hitcount = hitcount
+            self.ammo = ammo
 
             info = {
                 "health": health,
                 "hitcount": hitcount,
                 "ammo": ammo,
                 "vest_distance": vest_distance,
-                "detected_enemies": self.detected_enemies
+                "detected_enemies": self.detected_enemies,
             }
         else:
             screen_buffer = np.zeros(self.observation_space.shape)
-            info = {
-                "health": 0,
-                "hitcount": 0,
-                "ammo": 0,
-                "vest_distance": None,
-                "detected_enemies": self.detected_enemies
-            }
+            info = {"health": 0, "hitcount": 0, "ammo": 0, "vest_distance": None, "detected_enemies": False}
 
         done = self.game.is_episode_finished()
         return screen_buffer, reward, done, info
 
-    def check_victory(self):
-        if self.game.is_episode_finished():
-            state = self.game.get_state()
-            if state:
-                game_vars = state.game_variables
-                health = game_vars[0] if len(game_vars) > 0 else 0  # HEALTH
-                ammo = game_vars[2] if len(game_vars) > 2 else 0  # AMMO
-
-                # Critères de victoire
-                if health > 0 and ammo > 0:
-                    return True  # Victoire
-        return False  # Défaite
 
 
 
     def reset(self):
-        # Vérifiez si l'agent a gagné
-        if self.check_victory():
-            self.consecutive_wins += 1
-            print(f"Victory! Consecutive wins: {self.consecutive_wins}")
-            if self.consecutive_wins >= 5:
-                print(f"Agent has won 5 consecutive episodes. Increasing difficulty.")
-                self.increase_difficulty()
-                self.consecutive_wins = 0
-        else:
-            # print("Defeat. Resetting consecutive wins.")
-            self.consecutive_wins = 0
 
-        # Réinitialisez l'environnement
         self.previous_health = 100
         self.hitcount = 0
         self.ammo = 52
@@ -161,13 +156,6 @@ class DoomEnv(Env):
         state = self.game.get_state().screen_buffer
         return self._process_observation(state)
 
-
-
-    def increase_difficulty(self):
-        if self.difficulty < 5:
-            self.difficulty += 1
-            self.game.close()
-            self.init_game()
 
     def _process_observation(self, observation):
         resized = cv2.resize(np.moveaxis(observation, 0, -1), (160, 100), interpolation=cv2.INTER_AREA)
@@ -185,59 +173,72 @@ class EpochLoggerCallback(BaseCallback):
         super(EpochLoggerCallback, self).__init__(verbose)
         self.n_steps_per_epoch = n_steps_per_epoch
         self.current_epoch = 0
-        self.env = env  # Référence à l'environnement
+        self.env = env  
         self.rewards = []
         self.healths = []
         self.hitcounts = []
 
-        # Variables temporaires pour l'accumulation
         self.epoch_rewards = []
         self.epoch_healths = []
         self.epoch_hitcounts = []
 
+        self.writer = SummaryWriter("runs/doom_agent")
+
     def _on_step(self) -> bool:
-        # Collecter les informations sur l'étape actuelle
+
         if self.env.game.get_state():
             state = self.env.game.get_state()
             game_vars = state.game_variables
 
-            # Récompense cumulée, santé et hitcount
             self.epoch_rewards.append(self.env.game.get_last_reward())
-            self.epoch_healths.append(game_vars[0])  # Santé
-            self.epoch_hitcounts.append(game_vars[1])  # Ennemis touchés
+            self.epoch_healths.append(game_vars[0])
+            self.epoch_hitcounts.append(game_vars[1])
 
-        # Calculer l'époque actuelle
         self.current_epoch = self.num_timesteps // self.n_steps_per_epoch
 
-        # Si une époque est terminée
         if self.num_timesteps % self.n_steps_per_epoch == 0:
             if self.verbose:
                 print(f"Epoch {self.current_epoch} completed.")
 
-            # Enregistrer les moyennes pour l'époque
             if self.epoch_rewards:
-                self.rewards.append(np.mean(self.epoch_rewards))
-                self.healths.append(np.mean(self.epoch_healths))
-                self.hitcounts.append(np.mean(self.epoch_hitcounts))
+                avg_reward = np.mean(self.epoch_rewards)
+                avg_health = np.mean(self.epoch_healths)
+                avg_hitcount = np.mean(self.epoch_hitcounts)
 
-            # Réinitialiser les variables temporaires
+                self.rewards.append(avg_reward)
+                self.healths.append(avg_health)
+                self.hitcounts.append(avg_hitcount)
+
+                self.writer.add_scalar("Average Reward", avg_reward, self.current_epoch)
+                self.writer.add_scalar("Average Health", avg_health, self.current_epoch)
+                self.writer.add_scalar("Enemies Eliminated", avg_hitcount, self.current_epoch)
+
             self.epoch_rewards = []
             self.epoch_healths = []
             self.epoch_hitcounts = []
 
-            # Augmenter la difficulté toutes les 300 époques
-            if self.current_epoch % 300 == 0 and self.env.difficulty < 3:
-                self.env.difficulty += 1
-                self.env.init_game()  # Recharger le jeu avec la nouvelle difficulté
-                print(f"Difficulty increased to {self.env.difficulty}")
+        try:
+            if hasattr(self.model, "logger") and hasattr(self.model.logger, "name_to_value"):
+                approx_kl = self.model.logger.name_to_value.get("rollout/approx_kl", None)
+                value_loss = self.model.logger.name_to_value.get("train/value_loss", None)
+
+                if approx_kl is not None:
+                    self.writer.add_scalar("Approx KL", approx_kl, self.num_timesteps)
+                    # print(f"Approx KL: {approx_kl}")
+                if value_loss is not None:
+                    self.writer.add_scalar("Value Loss", value_loss, self.num_timesteps)
+                    # print(f"Value Loss: {value_loss}")
+
+        except Exception as e:
+            print(f"Warning: Could not log PPO metrics due to {e}")
 
         return True
 
+
     def plot_metrics(self):
-        """Plot the recorded metrics."""
+
         epochs = range(len(self.rewards))
 
-        # Average rewards
         plt.figure()
         plt.plot(epochs, self.rewards, label="Average Reward")
         plt.xlabel("Epochs")
@@ -245,9 +246,9 @@ class EpochLoggerCallback(BaseCallback):
         plt.title("Evolution of Average Rewards")
         plt.legend()
         plt.grid()
-        plt.show()
+        plt.savefig("average_rewards.png") 
+        print("Saved average_rewards.png")
 
-        # Average health
         plt.figure()
         plt.plot(epochs, self.healths, label="Average Health", color="green")
         plt.xlabel("Epochs")
@@ -255,9 +256,9 @@ class EpochLoggerCallback(BaseCallback):
         plt.title("Evolution of Average Health")
         plt.legend()
         plt.grid()
-        plt.show()
+        plt.savefig("average_health.png")
+        print("Saved average_health.png")
 
-        # Enemies eliminated
         plt.figure()
         plt.plot(epochs, self.hitcounts, label="Enemies Eliminated", color="red")
         plt.xlabel("Epochs")
@@ -265,7 +266,13 @@ class EpochLoggerCallback(BaseCallback):
         plt.title("Evolution of Enemies Eliminated")
         plt.legend()
         plt.grid()
-        plt.show()
+        plt.savefig("enemies_eliminated.png") 
+        print("Saved enemies_eliminated.png")
+
+
+    def on_training_end(self):
+        self.writer.close()
+
 
 
 
@@ -291,7 +298,6 @@ def record_video(env, model, video_path, video_fps=30, num_episodes=6):
     out.release()
     print(f"Video recorded at: {video_path}")
 
-    # Vérifiez si la vidéo a une taille correcte
     if os.path.exists(video_path):
         size = os.path.getsize(video_path)
         if size > 0:
@@ -304,16 +310,16 @@ def record_video(env, model, video_path, video_fps=30, num_episodes=6):
 class AgentWrapper:
     def __init__(self, policy="CnnPolicy", env=None, model_path=None, device="cuda"):
         """
-        Wrapper pour gérer l'entraînement, la sauvegarde et le chargement d'un agent.
+        Wrapper to handle the agent.
         """
         self.env = env
         self.policy = policy
         self.device = device
         if model_path and os.path.exists(model_path):
-            print(f"Chargement du modèle depuis : {model_path}")
+            print(f"Loading the model from : {model_path}")
             self.model = PPO.load(model_path, env=self.env, device=self.device)
         else:
-            print("Création d'un nouveau modèle.")
+            print("Creation of a new model.")
             self.model = PPO(
                 policy=self.policy,
                 env=self.env,
@@ -330,70 +336,68 @@ class AgentWrapper:
 
     def train(self, total_timesteps, callback=None):
         """
-        Entraîne l'agent pour un certain nombre de timesteps.
+        Train the agent for a number of timesteps.
         """
-        print(f"Entraînement de l'agent pour {total_timesteps} étapes...")
+        print(f"Training the model for {total_timesteps} timtesteps...")
         self.model.learn(total_timesteps=total_timesteps, callback=callback)
 
     def save(self, path):
         """
-        Sauvegarde le modèle entraîné.
+        Save the model to a file.
         """
-        print(f"Sauvegarde du modèle à : {path}")
+        print(f"Model saved at : {path}")
         self.model.save(path)
 
     def predict(self, observation):
         """
-        Prédit une action à partir d'une observation.
+        Predict the action to take given an observation.
         """
         return self.model.predict(observation)
 
     @staticmethod
     def load(path, env=None, device="cuda"):
         """
-        Charge un modèle existant.
+        Load the model from a file.
         """
-        print(f"Chargement du modèle depuis : {path}")
+        print(f"Loading the model from : {path}")
         return PPO.load(path, env=env, device=device)
 
 
 if __name__ == "__main__":
     scenario_path = "scenarios/deadly_corridor.cfg"
+    new_model_path = "trained_agent_intermediate.zip" 
+
     env = DoomEnv(scenario_path)
 
     if not torch.cuda.is_available():
         print("Warning: CUDA is not available. The code will run on the CPU.")
 
-    # Initialiser l'agent avec ou sans modèle existant
-    agent_wrapper = AgentWrapper(env=env, model_path="trained_agent.zip")
 
-    # Initialiser le callback avec l'environnement
+    agent_wrapper = AgentWrapper(env=env, model_path=None)  
+
+
     epoch_logger = EpochLoggerCallback(verbose=1, n_steps_per_epoch=2048, env=env)
 
-    # Total timesteps pour 1500 époques
-    total_timesteps = 2048 * 1500
 
-    # Entraîner l'agent
+    total_timesteps = 2048 * 900
+
+    print("Training the agent...")
     agent_wrapper.train(total_timesteps=total_timesteps, callback=epoch_logger)
 
-    # Sauvegarder le modèle entraîné
-    agent_wrapper.save("trained_agent.zip")
+ 
+    print(f"Saving the agent at : {new_model_path}")
+    agent_wrapper.save(new_model_path)
 
     # Évaluation
     mean_reward, std_reward = evaluate_policy(agent_wrapper.model, env, n_eval_episodes=10)
     print(f"Mean reward: {mean_reward} +/- {std_reward}")
 
-    # Tracer les métriques enregistrées
+   
     epoch_logger.plot_metrics()
 
-    # Enregistrement de la vidéo
-    video_path = os.path.abspath("trained_agent_video.mp4")
-    record_video(env, agent_wrapper.model, video_path)
+  
+    # video_path = os.path.abspath("trained_agent_video.mp4")
+    # record_video(env, agent_wrapper.model, video_path)
 
     env.close()
 
-
- 
- # Notes
- # We need to do a function deadly_corridor_daemon.predict(state) to get the action to take
- # Plot some graphs to see the evolution of the agent
