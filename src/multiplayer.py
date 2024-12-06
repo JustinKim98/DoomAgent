@@ -35,7 +35,7 @@ class SaveModelCallBack(BaseCallback):
 
 
 if __name__ == "__main__":
-    steps = 5000
+    steps = 3000
     allowed_actions = [
         vzd.Button.ATTACK,
         vzd.Button.MOVE_RIGHT,
@@ -44,16 +44,19 @@ if __name__ == "__main__":
         vzd.Button.MOVE_BACKWARD,
         vzd.Button.TURN_LEFT,
         vzd.Button.TURN_RIGHT,
+        vzd.Button.LOOK_UP,
+        vzd.Button.LOOK_DOWN,
         vzd.Button.RELOAD,
     ]
 
     game = vzd.DoomGame()
+    game.set_doom_map("map02")  # Full deathmatch.
 
     env = multiplayer_env.BaseEnv(
-        "scenarios/multi.cfg",
+        "scenarios/multi_duel.cfg",
         allowed_actions=allowed_actions,
         frame_buffer_size=6,
-        living_reward=-0.01,
+        living_reward=0.00,
         kill_opponent_reward=100,
         shoot_opponent_reward=70,
         exploration_rate=0.05,
@@ -82,12 +85,12 @@ if __name__ == "__main__":
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/multiplayer",
-        device="mps",
+        tensorboard_log="logs/multiplayer4",
+        device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/multiplayer", path="multiplayer"
+        freq=10000, log_dir="logs/multiplayer4", path="multiplayer4"
     )
 
     model.learn(total_timesteps=steps * 10000, callback=callback)

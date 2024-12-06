@@ -100,7 +100,7 @@ class BaseEnv(Env):
         self.infinite_run = infinite_run
 
         # Game variable configurations
-        self.maximum_steps = 300
+        self.maximum_steps = 1500
         self.step_cnt = 0
         self.num_hits = 0
         self.num_taken_hits = 0
@@ -108,7 +108,6 @@ class BaseEnv(Env):
         self.prev_damage = 0
         self.prev_damage_given = 0
         self.num_kills = 0
-        self.prev_fragcount = 0
 
     def step(self, action):
         if np.random.uniform(0, 1) < self.exploration_rate:
@@ -182,14 +181,14 @@ class BaseEnv(Env):
         # reset all variables
         self.step_cnt = 0
         self.total_reward = 0
-        self.num_hits = 0
-        self.num_taken_hits = 0
-        self.prev_damage = 0
-        self.prev_damage_given = 0
-        self.num_kills = 0
-        self.prev_fragcount = 0
-
         self.game.new_episode()
+        self.num_hits = self.game.get_game_variable(vzd.GameVariable.HITCOUNT)
+        self.num_taken_hits = self.game.get_game_variable(vzd.GameVariable.HITS_TAKEN)
+        self.prev_damage = self.game.get_game_variable(vzd.GameVariable.DAMAGE_TAKEN)
+        self.prev_damage_given = self.game.get_game_variable(
+            vzd.GameVariable.DAMAGECOUNT
+        )
+        self.num_kills = self.game.get_game_variable(vzd.GameVariable.KILLCOUNT)
         state = self.game.get_state()
         return self.wrap_state(state)
 
@@ -208,7 +207,7 @@ class BaseEnv(Env):
         env_frames = list()
         for i in range(0, self.frame_buffer_size):
             cnt += i
-            env_frames.append(self.frame_buffer[cnt])
+            env_frames.append(self.frame_buffer[len(self.frame_buffer) - cnt - 1])
 
         return np.concatenate(env_frames, axis=0)
 
