@@ -32,7 +32,7 @@ class DeathmatchAgent:
             ),
         )
         self.env = env.BaseEnv(
-            "multi.cfg", self.allowed_buttons, frame_buffer_size, game=self.game
+            "deathmatch.cfg", self.allowed_buttons, frame_buffer_size, game=self.game, configure_as_host= True
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
@@ -41,10 +41,12 @@ class DeathmatchAgent:
         self.action = 0
 
     def step(self):
-        if self.is_done:
-            return (0, is_done)
         state, reward, is_done, _ = self.env.step(self.action)
         self.action = self.model.predict(state)
+
+        if self.is_done:
+            return (0, is_done)
+
         return (reward, is_done)
 
     def reset(self):

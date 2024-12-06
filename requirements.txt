@@ -1,8 +1,8 @@
 gym==0.26.2
 gym-notices==0.0.8
 matplotlib==3.9.2
-gymnasium
-numpy
+gymnasium~=0.29.1
+numpy~=2.1.3
 opencv-python==4.10.0.84
 pygame==2.6.1
 Shimmy
@@ -12,3 +12,6 @@ torchvision==0.20.0
 tqdm==4.66.5
 vizdoom==1.2.4
 
+
+pynput~=1.7.7
+PyQt6~=6.7.1

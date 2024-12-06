@@ -29,28 +29,31 @@ def set_player_env(mode):
         return current_action, key_mapping
 
     if mode == "dtc":
-        game.load_config(os.path.join(vzd.scenarios_path, "multi_duel.cfg"))
+        game.load_config(os.path.join(vzd.scenarios_path, "defend_the_center.cfg"))
         current_action = [0] * 3
         key_mapping = {"a": [1, 0, 0], "d": [0, 1, 0], "space": [0, 0, 1]}
         return current_action, key_mapping
 
+    if mode == "deathmatch":
+        game.load_config(os.path.join(vzd.scenarios_path, "deathmatch.cfg"))
+        current_action = [0] * 8
+        key_mapping = {
+            "space": [1, 0, 0, 0, 0, 0, 0, 0],
+            "d": [0, 1, 0, 0, 0, 0, 0, 0],
+            "a": [0, 0, 1, 0, 0, 0, 0, 0],
+            "w": [0, 0, 0, 1, 0, 0, 0, 0],
+            "s": [0, 0, 0, 0, 1, 0, 0, 0],
+            "z": [0, 0, 0, 0, 0, 1, 0, 0],
+            "c": [0, 0, 0, 0, 0, 0, 1, 0],
+            "r": [0, 0, 0, 0, 0, 0, 0, 1],
+        }
+
+        return current_action, key_mapping
+
     game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
-    current_action = [0] * 8
-    key_mapping = {
-        "space": [1, 0, 0, 0, 0, 0, 0, 0],
-        "d": [0, 1, 0, 0, 0, 0, 0, 0],
-        "a": [0, 0, 1, 0, 0, 0, 0, 0],
-        "w": [0, 0, 0, 1, 0, 0, 0, 0],
-        "s": [0, 0, 0, 0, 1, 0, 0, 0],
-        "z": [0, 0, 0, 0, 0, 1, 0, 0],
-        "c": [0, 0, 0, 0, 0, 0, 1, 0],
-        "r": [0, 0, 0, 0, 0, 0, 0, 1],
-    }
-
-    return current_action, key_mapping
 
 
-# game.set_doom_map("map01")
+
 
 game.add_game_args(
     "+viz_connect_timeout 60 "
