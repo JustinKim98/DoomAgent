@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 import cv2
 from vizdoom import DoomGame, Mode, ScreenResolution, GameVariable
-
+from stable_baselines3 import PPO
 
 # Custom VizDoom environment
 class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
@@ -31,6 +31,9 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
         self.timestep = 0
 
     def step(self, action):
+
+        #state, reward, is_done, _ = self.env.step(self.action)
+
         # Perform action in the game
         self.timestep += 1  # Increment timestep
         print(f"Timestep: {self.timestep}")  # Log to console
@@ -47,7 +50,11 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
             processed_state = np.zeros(self.observation_space.shape, dtype=np.uint8)
 
         reward = self._calculate_reward()
-        return processed_state, reward, done, False, {}
+        #return processed_state, reward, done, False, {}
+        if self.game.is_player_dead():
+            self.game.respawn_player()
+
+        return reward, done
 
     def preprocess_frame(self, frame):
         """Preprocess Image: Resize, crop, and convert to grayscale."""
@@ -150,7 +157,8 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
         self.last_enemy_count = 0  # Initialize enemy count
         self.timestep = 0
 
-    def step(self, action):
+    def step(self):
+        action = self.model.predict()
         # Map continuous action to VizDoom-compatible range
         move_forward_backward = action[0] * 10  # Scale for forward/backward movement
         move_left_right = action[1] * 5  # Scale for strafing
@@ -176,7 +184,7 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
             processed_state = np.zeros(self.observation_space.shape, dtype=np.uint8)
 
         reward = self._calculate_reward()
-        return processed_state, reward, done, False, {}
+        return processed_state, reward, done, False
 
     def preprocess_frame(self, frame):
         """Preprocess Image: Resize, crop, and convert to grayscale."""
@@ -235,4 +243,25 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
     def close(self):
         """Close the environment and release resources."""
         self.game.close()
+
+class DefendTheCenterAgent:
+    def __init__(self, model_path):
+        self.action = 0
+        self.model_path = model_path
+        self.env = DoomDefendCenterEnv()
+        self.model = PPO.load(self.model_path,
+            env = self.env)
+
+
+    def step(self):
+        state, reward, is_done, _ = self.env.step(self.action)
+        self.action = self.model.predict(state)
+
+        if is_done:
+            return 0, is_done
+
+        return reward, is_done
+
+    def close(self):
+        self.env.close()
 

@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 
 
 class DeathmatchAgent:
-    def __init__(self, model_path, frame_buffer_size=6, game=None):
+    def __init__(self, model_path, frame_buffer_size=6):
         self.model_path = model_path
         self.allowed_buttons = [
             vzd.Button.ATTACK,
@@ -18,7 +18,7 @@ class DeathmatchAgent:
             vzd.Button.TURN_RIGHT,
             vzd.Button.RELOAD,
         ]
-        self.game = game
+        self.game = vzd.DoomGame()
 
         policy_kwargs = dict(
             features_extractor_class=model.PolicyModel,
@@ -39,12 +39,13 @@ class DeathmatchAgent:
         )
         self.is_done = False
         self.action = 0
+        self.game.init()
 
     def step(self):
         state, reward, is_done, _ = self.env.step(self.action)
         self.action = self.model.predict(state)
 
-        if self.is_done:
+        if is_done:
             return (0, is_done)
 
         return (reward, is_done)
@@ -53,6 +54,9 @@ class DeathmatchAgent:
         self.env.reset()
         self.is_done = False
         self.action = 0
+
+    def close(self):
+        self.env.close()
 
 
 if __name__ == "__main__":

@@ -96,6 +96,9 @@ class DoomEnv(Env):
             ammo_delta = self.ammo - ammo
             self.ammo = ammo
 
+            if self.game.is_player_dead():
+                self.game.respawn_player()
+
             reward += damage_taken_delta * -30
             reward += hitcount_delta * 220
             reward += ammo_delta * -1
@@ -301,7 +304,7 @@ def record_video(env, model, video_path, video_fps=30, num_episodes=6):
     else:
         print("Error: Video file was not created.")
 
-class AgentWrapper:
+class CorridorAgent:
     def __init__(self, policy="CnnPolicy", env=None, model_path=None, device="cuda"):
         """
         Wrapper pour gérer l'entraînement, la sauvegarde et le chargement d'un agent.
@@ -355,7 +358,7 @@ class AgentWrapper:
 
     def step(self):
         state, reward, is_done, _ = self.env.step(self.action)
-        self.action = self.model.predict(state)
+        self.action = self.model.predict(state)[0].item()
 
         if is_done:
             return 0, is_done
@@ -369,6 +372,9 @@ class AgentWrapper:
         """
         print(f"Chargement du modèle depuis : {path}")
         return PPO.load(path, env=env, device=device)
+
+    def close(self):
+        self.env.close()
 
 
 if __name__ == "__main__":

@@ -161,6 +161,24 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Models
+src/models/
+#src/models/multi/easy_multi
+#src/models/multi/medium_multi
+#src/models/multi/hard_multi
+#
+#src/models/corridor/easy_corridor.zip
+#src/models/corridor/medium_corridor.zip
+#src/models/corridor/hard_corridor.zip
+#
+#src/models/dtc/easy_dtc.zip
+#src/models/dtc/medium_dtc.zip
+#src/models/dtc/hard_dtc.zip
+
+#src/models/deathmatch/
+#src/models/deathmatch/
+#src/models/deathmatch/
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

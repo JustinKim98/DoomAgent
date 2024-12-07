@@ -27,24 +27,24 @@ class SelectModelWindow(QWidget):
         layout.addWidget(intermediate_btn)
         layout.addWidget(expert_btn)
         if map == "dtc":
-            EASY_MODEL = "models/dtc/EASY_PATH_dtc"
-            MED_MODEL = "models/dtc/MEDIUM_PATH_dtc"
-            HARD_MODEL = "models/dtc/HARD_PATH_dtc"
+            EASY_MODEL = "models/dtc/easy_dtc"
+            MED_MODEL = "models/dtc/medium_dtc"
+            HARD_MODEL = "models/dtc/hard_dtc"
 
         elif map == "corridor":
-            EASY_MODEL = "models/corridor/EASY_PATH_corridor"
-            MED_MODEL = "models/corridor/MEDIUM_PATH_corridor"
-            HARD_MODEL = "models/corridor/HARD_PATH_corridor"
+            EASY_MODEL = "models/corridor/easy_corridor"
+            MED_MODEL = "models/corridor/medium_corridor"
+            HARD_MODEL = "models/corridor/hard_corridor"
 
         elif map == "deatmatch":
-            EASY_MODEL = "models/deathmatch/EASY_PATH_deathmatch"
-            MED_MODEL = "models/deathmatch/MEDIUM_PATH_deathmatch"
-            HARD_MODEL = "models/deathmatch/HARD_PATH_deathmatch"
+            EASY_MODEL = "models/deathmatch/easy_deathmatch"
+            MED_MODEL = "models/deathmatch/medium_deathmatch"
+            HARD_MODEL = "models/deathmatch/hard_deathmatch"
 
         else:
-            EASY_MODEL = "models/multi/EASY_PATH_multi"
-            MED_MODEL = "models/multi/MEDIUM_PATH_multi"
-            HARD_MODEL = "models/multi/HARD_PATH_multi"
+            EASY_MODEL = "models/multi/easy_multi"
+            MED_MODEL = "models/multi/medium_multi"
+            HARD_MODEL = "models/multi/hard_multi"
 
 
 
@@ -127,7 +127,7 @@ class ApplicationMangager(QWidget):
     def run_model(self, map):
         self.select_model_window = SelectModelWindow(map)
         self.select_model_window.show()
-        print(f"Invoke Defend the center {map}")
+        print(f"Invoke {map}")
 
 
 
