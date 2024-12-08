@@ -52,7 +52,7 @@ class MultiplayerAgent:
 
     def step(self):
         if self.is_done:
-            return (0, is_done)
+            return (0, self.is_done)
         state, reward, is_done, _ = self.env.step(self.action)
         self.action = self.model.predict(state)
         return (reward, is_done)

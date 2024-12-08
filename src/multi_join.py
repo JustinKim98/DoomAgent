@@ -54,14 +54,16 @@ def set_player_env(mode):
         game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
         current_action = [0] * 8
         key_mapping = {
-            "space": [1, 0, 0, 0, 0, 0, 0, 0],
-            "d": [0, 1, 0, 0, 0, 0, 0, 0],
-            "a": [0, 0, 1, 0, 0, 0, 0, 0],
-            "w": [0, 0, 0, 1, 0, 0, 0, 0],
-            "s": [0, 0, 0, 0, 1, 0, 0, 0],
-            "z": [0, 0, 0, 0, 0, 1, 0, 0],
-            "c": [0, 0, 0, 0, 0, 0, 1, 0],
-            "r": [0, 0, 0, 0, 0, 0, 0, 1],
+            "space": [1, 0, 0, 0, 0, 0, 0, 0,0,0], #attack
+            "d": [0, 1, 0, 0, 0, 0, 0, 0,0,0], # right
+            "a": [0, 0, 1, 0, 0, 0, 0, 0,0,0], # left
+            "w": [0, 0, 0, 1, 0, 0, 0, 0,0,0], # up
+            "s": [0, 0, 0, 0, 1, 0, 0, 0,0,0], # down
+            "left": [0, 0, 0, 0, 0, 1, 0, 0,0,0], # turn left
+            "right": [0, 0, 0, 0, 0, 0, 1, 0,0,0], # turn right
+            "r": [0, 0, 0, 0, 0, 0, 0, 1,0,0], # reload
+            "up": [0,0,0,0,0,0,0,0,1,0], # look up
+            "down": [0,0,0,0,0,0,0,0,0,1] # look down
         }
 
         return current_action, key_mapping
