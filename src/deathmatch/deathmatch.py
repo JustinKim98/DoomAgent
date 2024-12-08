@@ -72,7 +72,7 @@ if __name__ == "__main__":
         ),
     )
 
-    model = PPO(
+    deathmatch_model = PPO(
         policy=policies.ActorCriticCnnPolicy,
         policy_kwargs=policy_kwargs,
         env=vec_env,
@@ -88,4 +88,4 @@ if __name__ == "__main__":
     callback = SaveModelCallBack(
         freq=10000, log_dir="logs/deathmatch11", path="deathmatch_models11"
     )
-    model.learn(total_timesteps=steps * 10000, callback=callback)
+    deathmatch_model.learn(total_timesteps=steps * 10000, callback=callback)

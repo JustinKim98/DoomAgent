@@ -361,6 +361,9 @@ class CorridorAgent:
 
         return reward, is_done
 
+    def reset(self):
+        self.env.reset()
+
     @staticmethod
     def load(path, env=None, device="cuda"):
         """

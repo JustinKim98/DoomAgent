@@ -20,23 +20,10 @@ class DeathmatchAgent:
         ]
         self.game = vzd.DoomGame()
 
-        policy_kwargs = dict(
-            features_extractor_class=model.PolicyModel,
-            features_extractor_kwargs=dict(features_dim=1024),
-            net_arch=dict(
-                activation_fn=torch.nn.Tanh,
-                net_arch=dict(
-                    vf=[1024, 512, 512, 256, 256, 256, 128, 64],
-                    pi=[1024, 512, 512, 256, 256, 256, 128, 64],
-                ),
-            ),
-        )
         self.env = env.BaseEnv(
             "deathmatch.cfg", self.allowed_buttons, frame_buffer_size, game=self.game
         )
-        self.model = PPO.load(
-            self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
-        )
+        self.model = PPO.load(self.model_path, env=self.env, device="auto")
         self.is_done = False
         self.action = 0
         self.game.init()

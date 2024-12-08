@@ -28,23 +28,22 @@ class SelectModelWindow(QWidget):
 
         multiplayer = False
         if map == "dtc":
-            EASY_MODEL = "models/dtc/easy_dtc"
-            MED_MODEL = "models/dtc/medium_dtc"
-            HARD_MODEL = "models/dtc/hard_dtc"
-
+            EASY_MODEL = "models/dtc/dtc_easy.zip"
+            MED_MODEL = "models/dtc/dtc_intermediate.zip"
+            HARD_MODEL = "models/dtc/dtc_hard.zip"
         elif map == "corridor":
             EASY_MODEL = "models/corridor/easy_corridor"
             MED_MODEL = "models/corridor/medium_corridor"
             HARD_MODEL = "models/corridor/hard_corridor"
         elif map == "deathmatch":
-            EASY_MODEL = "models/deathmatch/easy_deathmatch.zip"
-            MED_MODEL = "models/deathmatch/medium_deathmatch.zip"
-            HARD_MODEL = "models/deathmatch/hard_deathmatch.zip"
+            EASY_MODEL = "models/deathmatch/deathmatch_easy.zip"
+            MED_MODEL = "models/deathmatch/deathmatch_medium.zip"
+            HARD_MODEL = "models/deathmatch/deathmatch_hard.zip"
         else:
             multiplayer = True
-            EASY_MODEL = "models/multi/easy_multi.zip"
-            MED_MODEL = "models/multi/medium_multi.zip"
-            HARD_MODEL = "models/multi/hard_multi.zip"
+            EASY_MODEL = "models/multi/multi_dummy.zip"
+            MED_MODEL = "models/multi/multi_intermediate.zip"
+            HARD_MODEL = "models/multi/multi_expert.zip"
 
         self.map = map
 
