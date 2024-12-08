@@ -157,7 +157,7 @@ class BaseEnv(Env):
             self.game.respawn_player()
 
         self.total_reward += reward
-        return self.wrap_state(state), reward, False, dict()
+        return self.wrap_state(state), reward, is_terminated, dict()
 
     def reset(self):
         # reset all variables

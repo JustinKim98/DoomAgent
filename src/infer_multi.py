@@ -5,8 +5,8 @@ from models import model
 from stable_baselines3 import PPO
 
 
-class DeathmatchAgent:
-    def __init__(self, model_path, frame_buffer_size=6):
+class MultiAgent:
+    def __init__(self, model_path, frame_buffer_size=2):
         self.model_path = model_path
         self.allowed_buttons = [
             vzd.Button.ATTACK,
@@ -32,13 +32,30 @@ class DeathmatchAgent:
             ),
         )
         self.env = env.BaseEnv(
-            "deathmatch.cfg", self.allowed_buttons, frame_buffer_size, game=self.game, configure_as_host= True
+            "multi.cfg", self.allowed_buttons, frame_buffer_size, game=self.game, configure_as_host= True
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"
         )
         self.is_done = False
         self.action = 0
+
+        self.game.add_game_args(
+            "-host 2"
+            "-port 5029"
+            "+viz_connect_timeout 60 "
+            "-deathmatch "
+            "+timelimit 10.0 "
+            "+sv_forcerespawn 1 "
+            "+sv_noautoaim 1 "
+            "+sv_respawnprotect 1 "
+            "+sv_spawnfarthest 1 "
+            "+sv_nocrouch 1 "
+            "+viz_respawn_delay 10 "
+            "+viz_nocheat 1"
+        )
+
+        self.game.add_game_args("+name AI_Agent +colorset 0")
         self.game.init()
 
     def step(self):
@@ -60,7 +77,7 @@ class DeathmatchAgent:
 
 
 if __name__ == "__main__":
-    agent = DeathmatchAgent("models/deathmatch/hard_deathmatch")
+    agent = MultiAgent("models/multi/hard_multi")
 
     for i in range(0, 10):
         print(f"episode : {i}")

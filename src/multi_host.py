@@ -12,23 +12,20 @@ import vizdoom as vzd
 from infer_deathmatch import DeathmatchAgent
 from main3 import CorridorAgent
 from defend_the_center_env import DefendTheCenterAgent
-
+from infer_multi import MultiAgent
 
 def set_game_env(mode, model_path):
-    model = None
     if mode == "corridor":
         model = CorridorAgent(model_path= model_path)
-        actions = np.eye(7)
 
     elif mode == "dtc":
         model = DefendTheCenterAgent(model_path)
-        actions = np.eye(3)
 
     elif mode == "deathmatch":
         model = DeathmatchAgent(model_path)
-        actions = np.eye(8)
 
-    #elif mode =
+    else:
+        model = MultiAgent(model_path)
 
     return model
 

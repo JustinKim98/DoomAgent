@@ -50,7 +50,19 @@ def set_player_env(mode):
 
         return current_action, key_mapping
 
+    current_action = [0] * 8
+    key_mapping = {
+        "space": [1, 0, 0, 0, 0, 0, 0, 0],
+        "d": [0, 1, 0, 0, 0, 0, 0, 0],
+        "a": [0, 0, 1, 0, 0, 0, 0, 0],
+        "w": [0, 0, 0, 1, 0, 0, 0, 0],
+        "s": [0, 0, 0, 0, 1, 0, 0, 0],
+        "z": [0, 0, 0, 0, 0, 1, 0, 0],
+        "c": [0, 0, 0, 0, 0, 0, 1, 0],
+        "r": [0, 0, 0, 0, 0, 0, 0, 1],
+    }
     game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
+    return current_action, key_mapping
 
 
 
@@ -68,7 +80,7 @@ game.add_game_args(
     "+viz_nocheat 1"
 )
 
-game.add_game_args("+name Host +colorset 0")
+game.add_game_args("+name Player +colorset 0")
 game.add_game_args("-join 127.0.0.1 -port 5029")
 
 current_action, key_mapping = set_player_env(sys.argv[1])
