@@ -16,12 +16,10 @@ if __name__ == "__main__":
     env = env.BaseEnv(
         "scenarios/defend_the_center.cfg", allowed_actions, frame_buffer_size=4
     )
-
     policy_kwargs = dict(
         features_extractor_class=model.PolicyModel,
         features_extractor_kwargs=dict(features_dim=512),
     )
-
     model = PPO.load(
         "downloaded_models/defend_center2/model_iter_57500.zip",
         env=env,

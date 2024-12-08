@@ -18,9 +18,7 @@ class BaseEnv(Env):
         kill_opponent_reward=100,
         exploration_rate=0.1,
         infinite_run=False,
-
         game=None,
-        configure_as_host=False,
     ):
         super().__init__()
 
@@ -53,7 +51,6 @@ class BaseEnv(Env):
         self.game.set_render_particles(False)
         self.game.set_render_decals(False)
         self.game.set_doom_skill(1)
-
 
         # Initialize vizddom environment
         self.game.init()

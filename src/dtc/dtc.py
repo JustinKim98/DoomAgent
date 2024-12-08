@@ -1,8 +1,9 @@
 import gymnasium as gym
 import numpy as np
 import cv2
-from vizdoom import DoomGame, Mode, ScreenResolution, GameVariable
+from vizdoom import DoomGame, Mode, ScreenResolution, GameVariable, Button
 from stable_baselines3 import PPO
+
 
 # Custom VizDoom environment
 class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
@@ -31,9 +32,6 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
         self.timestep = 0
 
     def step(self, action):
-
-        #state, reward, is_done, _ = self.env.step(self.action)
-
         # Perform action in the game
         self.timestep += 1  # Increment timestep
         print(f"Timestep: {self.timestep}")  # Log to console
@@ -50,7 +48,6 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
             processed_state = np.zeros(self.observation_space.shape, dtype=np.uint8)
 
         reward = self._calculate_reward()
-        #return processed_state, reward, done, False, {}
         if self.game.is_player_dead():
             self.game.respawn_player()
 
@@ -124,7 +121,7 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
         self.game.close()
 
 
-class ContinuousDoomDefendCenterEnv(gym.Env):  
+class ContinuousDoomDefendCenterEnv(gym.Env):
     def __init__(self):
         super(ContinuousDoomDefendCenterEnv, self).__init__()
 
@@ -145,7 +142,10 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
 
         # Define action and observation spaces
         self.action_space = gym.spaces.Box(
-            low=-1.0, high=1.0, shape=(3,), dtype=np.float32  # Forward/Back, Strafe, Turn
+            low=-1.0,
+            high=1.0,
+            shape=(3,),
+            dtype=np.float32,  # Forward/Back, Strafe, Turn
         )
         self.observation_space = gym.spaces.Box(
             low=0, high=255, shape=(480, 640, 3), dtype=np.uint8
@@ -170,7 +170,7 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
                 move_left_right,
                 turn_left_right,
             ],
-            4  # Frame skip
+            4,  # Frame skip
         )
 
         # Check if the episode is finished
@@ -244,14 +244,13 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
         """Close the environment and release resources."""
         self.game.close()
 
+
 class DefendTheCenterAgent:
     def __init__(self, model_path):
         self.action = 0
         self.model_path = model_path
         self.env = DoomDefendCenterEnv()
-        self.model = PPO.load(self.model_path,
-            env = self.env)
-
+        self.model = PPO.load(self.model_path, env=self.env)
 
     def step(self):
         state, reward, is_done, _ = self.env.step(self.action)
@@ -264,4 +263,3 @@ class DefendTheCenterAgent:
 
     def close(self):
         self.env.close()
-

@@ -10,7 +10,7 @@ from stable_baselines3 import PPO
 
 
 class MultiplayerAgent:
-    def __init__(self, model_path, frame_buffer_size=6, game=None):
+    def __init__(self, model_path, frame_buffer_size=3, game=None):
         self.model_path = model_path
         self.allowed_buttons = [
             vzd.Button.ATTACK,
@@ -20,6 +20,8 @@ class MultiplayerAgent:
             vzd.Button.MOVE_DOWN,
             vzd.Button.TURN_LEFT,
             vzd.Button.TURN_RIGHT,
+            vzd.Button.LOOK_UP,
+            vzd.Button.LOOK_DOWN,
             vzd.Button.RELOAD,
         ]
         self.game = game
@@ -36,7 +38,11 @@ class MultiplayerAgent:
             ),
         )
         self.env = multiplayer_env.BaseEnv(
-            "multi.cfg", self.allowed_buttons, frame_buffer_size, game=self.game
+            "multi.cfg",
+            self.allowed_buttons,
+            frame_buffer_size,
+            game=self.game,
+            configure_as_host=True,
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="cpu"
@@ -64,7 +70,7 @@ if __name__ == "__main__":
 
     # Use CIG example config or your own.
     game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
-    # game.set_doom_map("map02")  # Full deathmatch.
+    game.set_doom_map("map02")  # Full deathmatch.
 
     # Host game with options that will be used in the competition.
     game.add_game_args(
@@ -84,17 +90,6 @@ if __name__ == "__main__":
     game.add_game_args("-join 127.0.0.1 -port 5029")
 
     game.set_mode(vzd.Mode.ASYNC_PLAYER)
-    allowed_actions = [
-        vzd.Button.ATTACK,
-        vzd.Button.MOVE_RIGHT,
-        vzd.Button.MOVE_LEFT,
-        vzd.Button.MOVE_FORWARD,
-        vzd.Button.MOVE_BACKWARD,
-        vzd.Button.TURN_LEFT,
-        vzd.Button.TURN_RIGHT,
-        vzd.Button.RELOAD,
-    ]
-    game.set_available_buttons(allowed_actions)
 
     agent = MultiplayerAgent(
         "downloaded_models/deathmatch8/model_iter_4000.0", game=game

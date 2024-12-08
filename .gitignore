@@ -163,6 +163,7 @@ cython_debug/
 
 # Models
 src/models/
+downloaded_models/*
 #src/models/multi/easy_multi
 #src/models/multi/medium_multi
 #src/models/multi/hard_multi

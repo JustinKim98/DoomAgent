@@ -4,7 +4,6 @@ from PyQt6.QtWidgets import QWidget, QMessageBox, QApplication
 from PyQt6.QtCore import QSize, QCoreApplication, Qt
 from PyQt6.QtGui import QPixmap, QPalette, QBrush
 from main_runner import ProccessRunner
-import qt_material
 
 
 class SelectModelWindow(QWidget):
@@ -26,6 +25,8 @@ class SelectModelWindow(QWidget):
         layout.addWidget(dummy_btn)
         layout.addWidget(intermediate_btn)
         layout.addWidget(expert_btn)
+
+        multiplayer = False
         if map == "dtc":
             EASY_MODEL = "models/dtc/easy_dtc"
             MED_MODEL = "models/dtc/medium_dtc"
@@ -35,31 +36,33 @@ class SelectModelWindow(QWidget):
             EASY_MODEL = "models/corridor/easy_corridor"
             MED_MODEL = "models/corridor/medium_corridor"
             HARD_MODEL = "models/corridor/hard_corridor"
-
-        elif map == "deatmatch":
-            EASY_MODEL = "models/deathmatch/easy_deathmatch"
-            MED_MODEL = "models/deathmatch/medium_deathmatch"
-            HARD_MODEL = "models/deathmatch/hard_deathmatch"
-
+        elif map == "deathmatch":
+            EASY_MODEL = "models/deathmatch/easy_deathmatch.zip"
+            MED_MODEL = "models/deathmatch/medium_deathmatch.zip"
+            HARD_MODEL = "models/deathmatch/hard_deathmatch.zip"
         else:
-            EASY_MODEL = "models/multi/easy_multi"
-            MED_MODEL = "models/multi/medium_multi"
-            HARD_MODEL = "models/multi/hard_multi"
-
-
-
+            multiplayer = True
+            EASY_MODEL = "models/multi/easy_multi.zip"
+            MED_MODEL = "models/multi/medium_multi.zip"
+            HARD_MODEL = "models/multi/hard_multi.zip"
 
         self.map = map
 
         layout.addWidget(self.label)
         self.setLayout(layout)
 
-        dummy_btn.clicked.connect(lambda :self.run_process([map, EASY_MODEL]))
-        intermediate_btn.clicked.connect(lambda : self.run_process([map, MED_MODEL]))
-        expert_btn.clicked.connect(lambda : self.run_process([map, HARD_MODEL]))
+        dummy_btn.clicked.connect(
+            lambda: self.run_process([map, EASY_MODEL], multiplayer)
+        )
+        intermediate_btn.clicked.connect(
+            lambda: self.run_process([map, MED_MODEL], multiplayer)
+        )
+        expert_btn.clicked.connect(
+            lambda: self.run_process([map, HARD_MODEL], multiplayer)
+        )
 
-    def run_process(self,args):
-        process = ProccessRunner(args)
+    def run_process(self, args, multiplayer):
+        process = ProccessRunner(args, multiplayer=multiplayer)
         process.run_process()
 
 
@@ -85,14 +88,13 @@ class ApplicationMangager(QWidget):
         deathmatch_btn.setIconSize(QSize(40, 40))
 
         multi_btn = QPushButton("One vs One", self)
-        multi_btn.setFixedSize(100,60)
-        multi_btn.setIconSize(QSize(40,40))
+        multi_btn.setFixedSize(100, 60)
+        multi_btn.setIconSize(QSize(40, 40))
 
         layout = QVBoxLayout()
         self.label = QLabel("Choose your map", parent=self)
         self.pixmap = QPixmap("Doom.jpg")
         self.palette = QPalette()
-        #self.palette.setBrush(self.palette.window(), QBrush(self.pixmap))
         self.setPalette(self.palette)
 
         layout.addWidget(self.label)
@@ -107,28 +109,22 @@ class ApplicationMangager(QWidget):
         layout.setAlignment(deathmatch_btn, Qt.AlignmentFlag.AlignHCenter)
         layout.setAlignment(multi_btn, Qt.AlignmentFlag.AlignHCenter)
 
-        defend_the_center_btn.clicked.connect(
-            lambda: self.run_model("dtc")
-        )
-
-        #corridor_btn.clicked.connect(lambda: self.run_model("corridor"))
-        #deathmatch_btn.clicked.connect(lambda: self.run_model("deathmatch"))
+        defend_the_center_btn.clicked.connect(lambda: self.run_model("dtc"))
 
         corridor_btn.clicked.connect(lambda: self.run_model("corridor"))
         deathmatch_btn.clicked.connect(lambda: self.run_model("deathmatch"))
 
-        multi_btn.clicked.connect(lambda : self.run_model("multi"))
+        multi_btn.clicked.connect(lambda: self.run_model("multi"))
 
-        # self.setGeometry(300, 300, 350, 250)
         self.setLayout(layout)
         self.setWindowTitle("Doom Agent")
         self.show()
 
     def run_model(self, map):
+        print(f"Map name : {map}")
         self.select_model_window = SelectModelWindow(map)
         self.select_model_window.show()
         print(f"Invoke {map}")
-
 
 
 def main():

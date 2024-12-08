@@ -13,6 +13,7 @@ import torch
 from stable_baselines3.common.callbacks import BaseCallback
 import shutil
 
+
 class DoomEnv(Env):
     def __init__(self, scenario, initial_difficulty=3):
         super().__init__()
@@ -20,7 +21,9 @@ class DoomEnv(Env):
         self.difficulty = initial_difficulty
         self.init_game()
 
-        self.observation_space = Box(low=0, high=255, shape=(3, 100, 160), dtype=np.uint8)
+        self.observation_space = Box(
+            low=0, high=255, shape=(3, 100, 160), dtype=np.uint8
+        )
         self.action_space = Discrete(len(self.game.get_available_buttons()))
         self.previous_health = 100
         self.hitcount = 0
@@ -38,15 +41,17 @@ class DoomEnv(Env):
         self.game.set_labels_buffer_enabled(True)
         self.game.set_depth_buffer_enabled(True)
         self.game.set_doom_skill(self.difficulty)
-        self.game.set_available_buttons([
-            vzd.Button.MOVE_FORWARD,
-            vzd.Button.MOVE_BACKWARD,
-            vzd.Button.TURN_LEFT,
-            vzd.Button.TURN_RIGHT,
-            vzd.Button.MOVE_LEFT,
-            vzd.Button.MOVE_RIGHT,
-            vzd.Button.ATTACK
-        ])
+        self.game.set_available_buttons(
+            [
+                vzd.Button.MOVE_FORWARD,
+                vzd.Button.MOVE_BACKWARD,
+                vzd.Button.TURN_LEFT,
+                vzd.Button.TURN_RIGHT,
+                vzd.Button.MOVE_LEFT,
+                vzd.Button.MOVE_RIGHT,
+                vzd.Button.ATTACK,
+            ]
+        )
         self.game.set_living_reward(0)
         self.game.set_death_penalty(-100)
         self.game.init()
@@ -68,10 +73,9 @@ class DoomEnv(Env):
             for label in labels:
                 if label.object_name == "GreenArmor":
                     # print(f"Vest detected at: {label.x}, {label.y}")
-                    vest_distance = np.sqrt(label.x ** 2 + label.y ** 2)
+                    vest_distance = np.sqrt(label.x**2 + label.y**2)
                     # print(f"Distance: {vest_distance}")
                     break
-                
 
             if vest_distance is not None:
                 if self.previous_vest_distance is not None:
@@ -81,7 +85,7 @@ class DoomEnv(Env):
                     elif distance_delta < 0:
                         reward += -10
                 self.previous_vest_distance = vest_distance
-            else :
+            else:
                 # print("Vest not detected")
                 reward += -40
 
@@ -111,7 +115,7 @@ class DoomEnv(Env):
                 "hitcount": hitcount,
                 "ammo": ammo,
                 "vest_distance": vest_distance,
-                "detected_enemies": self.detected_enemies
+                "detected_enemies": self.detected_enemies,
             }
         else:
             screen_buffer = np.zeros(self.observation_space.shape)
@@ -120,7 +124,7 @@ class DoomEnv(Env):
                 "hitcount": 0,
                 "ammo": 0,
                 "vest_distance": None,
-                "detected_enemies": self.detected_enemies
+                "detected_enemies": self.detected_enemies,
             }
 
         done = self.game.is_episode_finished()
@@ -138,8 +142,6 @@ class DoomEnv(Env):
                 if health > 0 and ammo > 0:
                     return True  # Victoire
         return False  # Défaite
-
-
 
     def reset(self):
         # Vérifiez si l'agent a gagné
@@ -164,8 +166,6 @@ class DoomEnv(Env):
         state = self.game.get_state().screen_buffer
         return self._process_observation(state)
 
-
-
     def increase_difficulty(self):
         if self.difficulty < 5:
             self.difficulty += 1
@@ -173,15 +173,14 @@ class DoomEnv(Env):
             self.init_game()
 
     def _process_observation(self, observation):
-        resized = cv2.resize(np.moveaxis(observation, 0, -1), (160, 100), interpolation=cv2.INTER_AREA)
+        resized = cv2.resize(
+            np.moveaxis(observation, 0, -1), (160, 100), interpolation=cv2.INTER_AREA
+        )
         return np.moveaxis(resized, -1, 0)  # Convert back to channels-first
-
-
-
-
 
     def close(self):
         self.game.close()
+
 
 class EpochLoggerCallback(BaseCallback):
     def __init__(self, verbose=1, n_steps_per_epoch=2048, env=None):
@@ -271,12 +270,8 @@ class EpochLoggerCallback(BaseCallback):
         plt.show()
 
 
-
-
-
-
 def record_video(env, model, video_path, video_fps=30, num_episodes=6):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(video_path, fourcc, video_fps, (320, 200), isColor=True)
 
     for episode in range(num_episodes):
@@ -303,6 +298,7 @@ def record_video(env, model, video_path, video_fps=30, num_episodes=6):
             print("Error: Video file is empty.")
     else:
         print("Error: Video file was not created.")
+
 
 class CorridorAgent:
     def __init__(self, policy="CnnPolicy", env=None, model_path=None, device="cuda"):
@@ -400,7 +396,9 @@ if __name__ == "__main__":
     agent_wrapper.save("trained_agent.zip")
 
     # Évaluation
-    mean_reward, std_reward = evaluate_policy(agent_wrapper.model, env, n_eval_episodes=10)
+    mean_reward, std_reward = evaluate_policy(
+        agent_wrapper.model, env, n_eval_episodes=10
+    )
     print(f"Mean reward: {mean_reward} +/- {std_reward}")
 
     # Tracer les métriques enregistrées
@@ -413,7 +411,6 @@ if __name__ == "__main__":
     env.close()
 
 
- 
- # Notes
- # We need to do a function deadly_corridor_daemon.predict(state) to get the action to take
- # Plot some graphs to see the evolution of the agent
+# Notes
+# We need to do a function deadly_corridor_daemon.predict(state) to get the action to take
+# Plot some graphs to see the evolution of the agent
