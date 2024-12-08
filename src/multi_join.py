@@ -3,7 +3,6 @@
 import os
 import vizdoom as vzd
 from time import sleep
-import sys
 import keyboard
 
 # Initialize the Doom game
