@@ -1,14 +1,7 @@
-#!/usr/bin/env python3
-
-import os
+import keyboard
 import vizdoom as vzd
 from time import sleep
-import sys
-import keyboard
-
-# Initialize the Doom game
-game = vzd.DoomGame()
-game.set_window_visible(True)
+import os
 
 current_action = [0] * 10
 key_mapping = {
@@ -23,27 +16,6 @@ key_mapping = {
     "up": [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],  # look up
     "down": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]  # look down
 }
-
-
-game.add_game_args(
-    "+viz_connect_timeout 60 "
-    "-deathmatch "
-    "+timelimit 10.0 "
-    "+sv_forcerespawn 1 "
-    "+sv_noautoaim 1 "
-    "+sv_respawnprotect 1 "
-    "+sv_spawnfarthest 1 "
-    "+sv_nocrouch 1 "
-    "+viz_respawn_delay 10 "
-    "+viz_nocheat 1"
-)
-
-game.add_game_args("+name Player +colorset 0")
-game.add_game_args("-join 127.0.0.1 -port 5029")
-game.set_doom_map("map02")
-
-
-game.init()
 
 def keyboard_listener():
     def handle_event(key):
@@ -65,9 +37,27 @@ def keyboard_listener():
 
     keyboard.hook(handle_event)
 
+game = vzd.DoomGame()
+game.set_window_visible(True)
+game.add_game_args("+name Player +colorset 0")
+game.set_doom_map("map02")
+allowed_buttons = [
+    vzd.Button.ATTACK,
+    vzd.Button.MOVE_RIGHT,
+    vzd.Button.MOVE_LEFT,
+    vzd.Button.MOVE_UP,
+    vzd.Button.MOVE_DOWN,
+    vzd.Button.TURN_LEFT,
+    vzd.Button.TURN_RIGHT,
+    vzd.Button.LOOK_UP,
+    vzd.Button.LOOK_DOWN,
+    vzd.Button.RELOAD,
+]
+game.set_available_buttons(allowed_buttons)
 
+game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
+game.init()
 keyboard_listener()
-
 while not game.is_episode_finished():
 
     if game.is_player_dead():
@@ -80,5 +70,4 @@ while not game.is_episode_finished():
     # add a small delay to reduce CPU usage
     sleep(0.05)
 
-keyboard.unhook_all()
 game.close()
