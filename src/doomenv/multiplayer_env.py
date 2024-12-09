@@ -100,7 +100,7 @@ class BaseEnv(Env):
         self.infinite_run = infinite_run
 
         # Game variable configurations
-        self.maximum_steps = 1500
+        self.maximum_steps = 3000
         self.step_cnt = 0
         self.num_hits = 0
         self.num_taken_hits = 0

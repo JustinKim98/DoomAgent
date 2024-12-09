@@ -55,7 +55,7 @@ if __name__ == "__main__":
     env = multiplayer_env.BaseEnv(
         "scenarios/multi_duel.cfg",
         allowed_actions=allowed_actions,
-        frame_buffer_size=6,
+        frame_buffer_size=3,
         living_reward=0.00,
         kill_opponent_reward=100,
         shoot_opponent_reward=70,
@@ -81,16 +81,16 @@ if __name__ == "__main__":
         policy_kwargs=policy_kwargs,
         env=env,
         verbose=True,
-        learning_rate=1e-6 * 5,
+        learning_rate=1e-6 * 3,
         batch_size=64,
         gamma=0.99,
         n_steps=steps,
-        tensorboard_log="logs/multiplayer4",
+        tensorboard_log="logs/multiplayer7",
         device="cuda",
     )
 
     callback = SaveModelCallBack(
-        freq=10000, log_dir="logs/multiplayer4", path="multiplayer4"
+        freq=10000, log_dir="logs/multiplayer7", path="multiplayer7"
     )
 
     model.learn(total_timesteps=steps * 10000, callback=callback)

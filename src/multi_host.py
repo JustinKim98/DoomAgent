@@ -12,19 +12,20 @@ import vizdoom as vzd
 from infer_deathmatch import DeathmatchAgent
 from main3 import AgentWrapper
 from defend_the_center_env import DoomDefendCenterEnv
+
 game = vzd.DoomGame()
 
 
 def set_game_env(mode, model_path):
     model = None
     if mode == "corridor":
-        model = AgentWrapper(model_path= model_path)
+        model = AgentWrapper(model_path=model_path)
         # model = load_model(CORRIDOR_MODEL)
         # game.load_config(os.path.join(vzd.scenarios_path, "deadly_corridor.cfg"))
         actions = np.eye(7)
 
     elif mode == "dtc":
-        model = DoomDefendCenterEnv(model_path, game = game)
+        model = DoomDefendCenterEnv(model_path, game=game)
         # game.load_config(os.path.join(vzd.scenarios_path, "multi_duel.cfg"))
         actions = np.eye(3)
 
@@ -32,8 +33,6 @@ def set_game_env(mode, model_path):
         model = DeathmatchAgent(model_path, game=game)
         # game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
         actions = np.eye(8)
-
-    elif mode =
 
     return model, actions
 

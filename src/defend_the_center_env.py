@@ -117,7 +117,7 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
         self.game.close()
 
 
-class ContinuousDoomDefendCenterEnv(gym.Env):  
+class ContinuousDoomDefendCenterEnv(gym.Env):
     def __init__(self):
         super(ContinuousDoomDefendCenterEnv, self).__init__()
 
@@ -138,7 +138,10 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
 
         # Define action and observation spaces
         self.action_space = gym.spaces.Box(
-            low=-1.0, high=1.0, shape=(3,), dtype=np.float32  # Forward/Back, Strafe, Turn
+            low=-1.0,
+            high=1.0,
+            shape=(3,),
+            dtype=np.float32,  # Forward/Back, Strafe, Turn
         )
         self.observation_space = gym.spaces.Box(
             low=0, high=255, shape=(480, 640, 3), dtype=np.uint8
@@ -162,7 +165,7 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
                 move_left_right,
                 turn_left_right,
             ],
-            4  # Frame skip
+            4,  # Frame skip
         )
 
         # Check if the episode is finished
@@ -235,4 +238,3 @@ class ContinuousDoomDefendCenterEnv(gym.Env):
     def close(self):
         """Close the environment and release resources."""
         self.game.close()
-

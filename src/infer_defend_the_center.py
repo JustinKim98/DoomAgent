@@ -3,6 +3,7 @@ from stable_baselines3 import PPO
 from defend_the_center_env import DoomDefendCenterEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 
+
 class DefendCenterAgent:
     def __init__(self, model_path):
         self.model_path = model_path
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         while not done:
             state, reward, done, info = agent.step(state)
             total_reward += reward
-            agent.env.render() 
+            agent.env.render()
 
         print(f"Episode {episode + 1} finished with total reward: {total_reward}")
 

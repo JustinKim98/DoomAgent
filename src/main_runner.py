@@ -9,6 +9,7 @@ class ProccessRunner:
     def run_process(self):
         run_two_processes_with_args(self.args)
 
+
 def run_two_processes_with_args(args):
     # Define the commands for the two processes
     command1 = ["python3", "multi_host.py"] + args
@@ -22,8 +23,6 @@ def run_two_processes_with_args(args):
         process2.wait()
 
     process1.wait()
-
-
 
 
 if __name__ == "__main__":

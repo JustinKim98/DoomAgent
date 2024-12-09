@@ -53,8 +53,6 @@ def set_player_env(mode):
     game.load_config(os.path.join(vzd.scenarios_path, "multi.cfg"))
 
 
-
-
 game.add_game_args(
     "+viz_connect_timeout 60 "
     "-deathmatch "

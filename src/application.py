@@ -46,19 +46,16 @@ class SelectModelWindow(QWidget):
             MED_MODEL = "models/multi/MEDIUM_PATH_multi"
             HARD_MODEL = "models/multi/HARD_PATH_multi"
 
-
-
-
         self.map = map
 
         layout.addWidget(self.label)
         self.setLayout(layout)
 
-        dummy_btn.clicked.connect(lambda :self.run_process([map, EASY_MODEL]))
-        intermediate_btn.clicked.connect(lambda : self.run_process([map, MED_MODEL]))
-        expert_btn.clicked.connect(lambda : self.run_process([map, HARD_MODEL]))
+        dummy_btn.clicked.connect(lambda: self.run_process([map, EASY_MODEL]))
+        intermediate_btn.clicked.connect(lambda: self.run_process([map, MED_MODEL]))
+        expert_btn.clicked.connect(lambda: self.run_process([map, HARD_MODEL]))
 
-    def run_process(self,args):
+    def run_process(self, args):
         process = ProccessRunner(args)
         process.run_process()
 
@@ -85,14 +82,14 @@ class ApplicationMangager(QWidget):
         deathmatch_btn.setIconSize(QSize(40, 40))
 
         multi_btn = QPushButton("One vs One", self)
-        multi_btn.setFixedSize(100,60)
-        multi_btn.setIconSize(QSize(40,40))
+        multi_btn.setFixedSize(100, 60)
+        multi_btn.setIconSize(QSize(40, 40))
 
         layout = QVBoxLayout()
         self.label = QLabel("Choose your map", parent=self)
         self.pixmap = QPixmap("Doom.jpg")
         self.palette = QPalette()
-        #self.palette.setBrush(self.palette.window(), QBrush(self.pixmap))
+        # self.palette.setBrush(self.palette.window(), QBrush(self.pixmap))
         self.setPalette(self.palette)
 
         layout.addWidget(self.label)
@@ -107,17 +104,15 @@ class ApplicationMangager(QWidget):
         layout.setAlignment(deathmatch_btn, Qt.AlignmentFlag.AlignHCenter)
         layout.setAlignment(multi_btn, Qt.AlignmentFlag.AlignHCenter)
 
-        defend_the_center_btn.clicked.connect(
-            lambda: self.run_model("dtc")
-        )
+        defend_the_center_btn.clicked.connect(lambda: self.run_model("dtc"))
 
-        #corridor_btn.clicked.connect(lambda: self.run_model("corridor"))
-        #deathmatch_btn.clicked.connect(lambda: self.run_model("deathmatch"))
+        # corridor_btn.clicked.connect(lambda: self.run_model("corridor"))
+        # deathmatch_btn.clicked.connect(lambda: self.run_model("deathmatch"))
 
         corridor_btn.clicked.connect(lambda: self.run_model("corridor"))
         deathmatch_btn.clicked.connect(lambda: self.run_model("deathmatch"))
 
-        multi_btn.clicked.connect(lambda : self.run_model("multi"))
+        multi_btn.clicked.connect(lambda: self.run_model("multi"))
 
         # self.setGeometry(300, 300, 350, 250)
         self.setLayout(layout)
@@ -128,7 +123,6 @@ class ApplicationMangager(QWidget):
         self.select_model_window = SelectModelWindow(map)
         self.select_model_window.show()
         print(f"Invoke Defend the center {map}")
-
 
 
 def main():

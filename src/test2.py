@@ -6,6 +6,7 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.callbacks import BaseCallback
 from vizdoom import DoomGame, Mode, ScreenResolution, GameVariable
 
+
 # Custom VizDoom environment
 class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
     def __init__(self):
@@ -117,11 +118,13 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
         """Close the environment and release resources."""
         self.game.close()
 
+
 # Callback for saving the model
 class SaveModelCallback(BaseCallback):
     """
     Callback for saving a model every `save_freq` steps.
     """
+
     def __init__(self, save_freq, save_path, verbose=1):
         super(SaveModelCallback, self).__init__(verbose)
         self.save_freq = save_freq
@@ -135,17 +138,13 @@ class SaveModelCallback(BaseCallback):
                 print(f"Model saved to {save_file}")
         return True
 
+
 # Initialize the environment
 env = DoomDefendCenterEnv()
 check_env(env)
 
 # Initialize the PPO agent
-model = PPO(
-    "CnnPolicy",
-    env,
-    verbose=1,
-    tensorboard_log="./ppo_doom_tensorboard/"
-)
+model = PPO("CnnPolicy", env, verbose=1, tensorboard_log="./ppo_doom_tensorboard/")
 
 # Define save parameters
 save_freq = 5000  # Save every 10,000 steps
