@@ -9,6 +9,7 @@ from gym.spaces import Discrete, Box
 import cv2
 import matplotlib.pyplot as plt
 
+
 class DoomEnv(Env):
     def __init__(self, scenario, initial_difficulty=1):
         super().__init__()
@@ -16,7 +17,9 @@ class DoomEnv(Env):
         self.difficulty = initial_difficulty
         self.init_game()
 
-        self.observation_space = Box(low=0, high=255, shape=(3, 100, 160), dtype=np.uint8)
+        self.observation_space = Box(
+            low=0, high=255, shape=(3, 100, 160), dtype=np.uint8
+        )
         self.action_space = Discrete(len(self.game.get_available_buttons()))
 
     def init_game(self):
@@ -28,15 +31,17 @@ class DoomEnv(Env):
         self.game.set_labels_buffer_enabled(True)
         self.game.set_depth_buffer_enabled(True)
         self.game.set_doom_skill(self.difficulty)
-        self.game.set_available_buttons([
-            vzd.Button.MOVE_FORWARD,
-            vzd.Button.MOVE_BACKWARD,
-            vzd.Button.TURN_LEFT,
-            vzd.Button.TURN_RIGHT,
-            vzd.Button.MOVE_LEFT,
-            vzd.Button.MOVE_RIGHT,
-            vzd.Button.ATTACK
-        ])
+        self.game.set_available_buttons(
+            [
+                vzd.Button.MOVE_FORWARD,
+                vzd.Button.MOVE_BACKWARD,
+                vzd.Button.TURN_LEFT,
+                vzd.Button.TURN_RIGHT,
+                vzd.Button.MOVE_LEFT,
+                vzd.Button.MOVE_RIGHT,
+                vzd.Button.ATTACK,
+            ]
+        )
         self.game.init()
 
     def step(self, action):
@@ -61,11 +66,14 @@ class DoomEnv(Env):
             return np.zeros(self.observation_space.shape)
 
     def _process_observation(self, observation):
-        resized = cv2.resize(np.moveaxis(observation, 0, -1), (160, 100), interpolation=cv2.INTER_AREA)
+        resized = cv2.resize(
+            np.moveaxis(observation, 0, -1), (160, 100), interpolation=cv2.INTER_AREA
+        )
         return np.moveaxis(resized, -1, 0)
 
     def close(self):
         self.game.close()
+
 
 def play_agent(env, model, num_episodes=5):
     """
@@ -84,6 +92,7 @@ def play_agent(env, model, num_episodes=5):
 
         print(f"Episode finished with a total reward of {total_reward}.")
     print("End of episodes.")
+
 
 if __name__ == "__main__":
     scenario_path = "deadly_corridor.cfg"
