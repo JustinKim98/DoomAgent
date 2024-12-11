@@ -26,17 +26,17 @@ class MultiplayerAgent:
         ]
         self.game = game
 
-        policy_kwargs = dict(
-            features_extractor_class=model.PolicyModel,
-            features_extractor_kwargs=dict(features_dim=1024),
-            net_arch=dict(
-                activation_fn=torch.nn.Tanh,
-                net_arch=dict(
-                    vf=[1024, 512, 512, 256, 256, 256, 128, 64],
-                    pi=[1024, 512, 512, 256, 256, 256, 128, 64],
-                ),
-            ),
-        )
+        # policy_kwargs = dict(
+        #     features_extractor_class=model.PolicyModel,
+        #     features_extractor_kwargs=dict(features_dim=1024),
+        #     net_arch=dict(
+        #         activation_fn=torch.nn.Tanh,
+        #         net_arch=dict(
+        #             vf=[1024, 512, 512, 256, 256, 256, 128, 64],
+        #             pi=[1024, 512, 512, 256, 256, 256, 128, 64],
+        #         ),
+        #     ),
+        # )
         self.env = multiplayer_env.BaseEnv(
             "multi.cfg",
             self.allowed_buttons,
@@ -44,9 +44,7 @@ class MultiplayerAgent:
             game=self.game,
             configure_as_host=True,
         )
-        self.model = PPO.load(
-            self.model_path, env=self.env, custom_object=policy_kwargs, device="cpu"
-        )
+        self.model = PPO.load(self.model_path, env=self.env, device="cpu")
         self.is_done = False
         self.action = 0
 
@@ -92,7 +90,9 @@ if __name__ == "__main__":
     game.set_mode(vzd.Mode.ASYNC_PLAYER)
 
     agent = MultiplayerAgent(
-        "downloaded_models/deathmatch8/model_iter_4000.0", game=game
+        "downloaded_models/multiplayer7/model_iter_17800.0",
+        game=game,
+        frame_buffer_size=3,
     )
 
     # Play until the game (episode) is over.

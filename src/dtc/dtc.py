@@ -13,7 +13,7 @@ class DoomDefendCenterEnv(gym.Env):  # Inherit from gymnasium.Env
         # Initialize the game
         self.game = DoomGame()
         self.game.load_config("defend_the_center.cfg")
-        self.game.set_doom_scenario_path("defend_the_center.wad")
+        # self.game.set_doom_scenario_path("defend_the_center.wad")
         self.game.set_screen_resolution(ScreenResolution.RES_640X480)
         self.game.set_mode(Mode.PLAYER)
         self.game.set_window_visible(False)

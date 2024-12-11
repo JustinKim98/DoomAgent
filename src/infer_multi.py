@@ -32,7 +32,11 @@ class MultiAgent:
             ),
         )
         self.env = env.BaseEnv(
-            "multi.cfg", self.allowed_buttons, frame_buffer_size, game=self.game, configure_as_host= True
+            "multi.cfg",
+            self.allowed_buttons,
+            frame_buffer_size,
+            game=self.game,
+            configure_as_host=True,
         )
         self.model = PPO.load(
             self.model_path, env=self.env, custom_object=policy_kwargs, device="auto"

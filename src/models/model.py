@@ -2,7 +2,6 @@ import torch
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from gym.spaces import Box
 
-
 class PolicyModel(BaseFeaturesExtractor):
     def __init__(self, observation_space: Box, features_dim):
         super(PolicyModel, self).__init__(observation_space, features_dim)
@@ -37,10 +36,14 @@ class PolicyModel(BaseFeaturesExtractor):
         self.maxpool4 = torch.nn.MaxPool2d(4, 2)
         self.relu4 = torch.nn.LeakyReLU()
 
+        print(f"observation_space shape : {observation_space.shape}")
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(38400, 4096)
+        
+        dim_size = 1024 if observation_space.shape[0] > 12 else 4096
+
+        self.linear1 = torch.nn.Linear(38400, dim_size)
         self.relu4 = torch.nn.LeakyReLU()
-        self.linear2 = torch.nn.Linear(4096, features_dim)
+        self.linear2 = torch.nn.Linear(dim_size, features_dim)
         self.relu5 = torch.nn.LeakyReLU()
 
     def forward(self, state_input: torch.Tensor):

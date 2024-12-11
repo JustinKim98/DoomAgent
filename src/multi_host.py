@@ -53,7 +53,7 @@ def set_game_env(mode, model_path):
         game.add_game_args("+name Host +colorset 0")
         game.add_game_args("-join 127.0.0.1 -port 5029")
 
-        model = MultiplayerAgent(model_path, game=game)
+        model = MultiplayerAgent(model_path, game=game, frame_buffer_size=2)
 
     return model
 
@@ -64,7 +64,7 @@ model = set_game_env(sys.argv[1], sys.argv[2])
 total_reward = 0
 is_done = False
 
-for i in range(0, 10):
+for i in range(0, 1):
     while not is_done:
         reward, is_done = model.step()
         total_reward += reward

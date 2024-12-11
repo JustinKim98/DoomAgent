@@ -20,7 +20,7 @@ if __name__ == "__main__":
         features_extractor_class=model.PolicyModel,
         features_extractor_kwargs=dict(features_dim=512),
     )
-    model = PPO.load(
+    deathmatch_model = PPO.load(
         "downloaded_models/defend_center2/model_iter_57500.zip",
         env=env,
         custom_objects=policy_kwargs,
@@ -34,6 +34,6 @@ if __name__ == "__main__":
         print(f"episode : {i}")
         while not is_done:
             state, reward, is_done, _ = env.step(action)
-            action = model.predict(state)
+            action = deathmatch_model.predict(state)
         env.reset()
         is_done = False

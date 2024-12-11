@@ -52,7 +52,7 @@ if __name__ == "__main__":
     env = multiplayer_env.BaseEnv(
         "scenarios/multi.cfg",
         allowed_actions=allowed_actions,
-        frame_buffer_size=6,
+        frame_buffer_size=3,
         living_reward=-0.01,
         kill_opponent_reward=100,
         shoot_opponent_reward=70,
@@ -62,8 +62,8 @@ if __name__ == "__main__":
     )
 
     policy_kwargs = dict(
-        features_extractor_class=model.PolicyModel,
-        features_extractor_kwargs=dict(features_dim=1024),
+        # features_extractor_class=model.PolicyModel,
+        # features_extractor_kwargs=dict(features_dim=1024),
         net_arch=dict(
             activation_fn=torch.nn.Tanh,
             net_arch=dict(
@@ -73,9 +73,8 @@ if __name__ == "__main__":
         ),
     )
 
-    model = PPO(
-        policy=policies.ActorCriticCnnPolicy,
-        policy_kwargs=policy_kwargs,
+    deathmatch_model = PPO.load(
+        "downloaded_models/multiplayer7/model_iter_17800.0",
         env=env,
         verbose=True,
         learning_rate=1e-6 * 5,
@@ -90,4 +89,4 @@ if __name__ == "__main__":
         freq=10000, log_dir="logs/multiplayer", path="multiplayer"
     )
 
-    model.learn(total_timesteps=steps * 10000, callback=callback)
+    deathmatch_model.learn(total_timesteps=steps * 10000, callback=callback)

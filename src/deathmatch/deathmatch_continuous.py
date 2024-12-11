@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     torch.set_default_dtype(torch.float32)
 
-    model = PPO(
+    deathmatch_model = PPO(
         policy=policies.ActorCriticCnnPolicy,
         policy_kwargs=policy_kwargs,
         env=vec_env,
@@ -78,4 +78,4 @@ if __name__ == "__main__":
         log_dir="logs/deathmatch_continuous",
         path="deathmatch_continuous_models",
     )
-    model.learn(total_timesteps=steps * 10000, callback=callback)
+    deathmatch_model.learn(total_timesteps=steps * 10000, callback=callback)
