@@ -14,8 +14,9 @@ key_mapping = {
     "s": [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],  # move back
     "r": [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],  # reload
     "up": [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],  # look up
-    "down": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]  # look down
+    "down": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # look down
 }
+
 
 def keyboard_listener():
     def handle_event(key):
@@ -36,6 +37,7 @@ def keyboard_listener():
             current_action = [0] * len(current_action)  # reset
 
     keyboard.hook(handle_event)
+
 
 game = vzd.DoomGame()
 game.set_window_visible(True)

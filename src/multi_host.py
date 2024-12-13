@@ -64,11 +64,12 @@ model = set_game_env(sys.argv[1], sys.argv[2])
 total_reward = 0
 is_done = False
 
-for i in range(0, 1):
+for i in range(0, 5):
     while not is_done:
         reward, is_done = model.step()
         total_reward += reward
     model.reset()
+    is_done = False
 
 print("Total Reward: " + str(total_reward))
 model.close()

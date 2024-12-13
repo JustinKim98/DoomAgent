@@ -20,7 +20,7 @@ key_mapping = {
     "s": [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],  # move back
     "r": [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],  # reload
     "up": [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],  # look up
-    "down": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]  # look down
+    "down": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # look down
 }
 
 
@@ -43,6 +43,8 @@ game.set_doom_map("map02")
 
 
 game.init()
+print("Join!")
+
 
 def keyboard_listener():
     def handle_event(key):

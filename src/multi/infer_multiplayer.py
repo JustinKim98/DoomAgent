@@ -26,17 +26,6 @@ class MultiplayerAgent:
         ]
         self.game = game
 
-        # policy_kwargs = dict(
-        #     features_extractor_class=model.PolicyModel,
-        #     features_extractor_kwargs=dict(features_dim=1024),
-        #     net_arch=dict(
-        #         activation_fn=torch.nn.Tanh,
-        #         net_arch=dict(
-        #             vf=[1024, 512, 512, 256, 256, 256, 128, 64],
-        #             pi=[1024, 512, 512, 256, 256, 256, 128, 64],
-        #         ),
-        #     ),
-        # )
         self.env = multiplayer_env.BaseEnv(
             "multi.cfg",
             self.allowed_buttons,
