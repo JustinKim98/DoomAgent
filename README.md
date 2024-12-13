@@ -52,16 +52,16 @@ python src/application.py
     * Choose Corridor for watching the agent play corridor map
     * Choose Deathmatch for watching the agent play deathmatch map
     * Choose Multi for playing with the agent in multiplayer map
-![title](media/Menu.png)
+![image](media/Menu.png)
 
 5. __Choose the agent to watch or play with__
     * Choose Dummy for agent with stupid actions
     * Choose Expert for agent with smart actions
     * Choose Intermediate for agent in between
-![title](media/select.png)
+![image](media/select.png)
 
 6. __Enjoy!__
-![video](media/deathmatch_demo2.mov)
+![image](media/deathmatch.png)
 
 ## Contributors
 * Jaewoo Kim (20170149)
