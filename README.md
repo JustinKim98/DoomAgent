@@ -10,7 +10,7 @@ For doing so, player can either watch, or play with our trained AI agent that ar
     * We recommand using venv (virtual env) or conda environment for running, this, since running this application requires lots to install
     (Install requirements using requirements.txt file)
     * Running the models (Especially deathmatch and multi) requires more than 10GB of vram (if running on GPU) or more than 16GB of system ram (if running on CPU)
-    * If preparing the environment is difficult, you can watch the demo from the google drive, saved as `Example videos.zip`
+    * If preparing the environment is too difficult, you can watch the demo from the google drive, saved as `Example videos.zip`
 
 2. __Prepare the models__
     * Our models can be downloaded from [Google drive](https://drive.google.com/drive/folders/1njCoR8-XmdMKT8RKTulf9X1PKd-8AdAx?usp=sharing) as `.zip` file
@@ -41,14 +41,14 @@ For doing so, player can either watch, or play with our trained AI agent that ar
     ```
 
 3. __Launch the application__
-    * Launch the application using from the project root directory
+    * Launch the application using the command below from the project root directory
         (You may need root permission for keyboard input to work)
 ```
 python src/application.py
 ```
 
 4. __Choose the map (defend the center, corridor, deathmatch, one vs one)__
-    * Choose Defend the for watching the agent play defend-the-center map
+    * Choose Defend the Center for watching the agent play defend-the-center map
     * Choose Corridor for watching the agent play corridor map
     * Choose Deathmatch for watching the agent play deathmatch map
     * Choose Multi for playing with the agent in multiplayer map
