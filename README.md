@@ -68,3 +68,9 @@ python src/application.py
 * Ziad Alalami (20246463)
 * Rizlaine Zaroual (20246485)
 * Andrianarivo Koloina Ashley (20246484)
+
+
+## References
+* Vizdoom
+* Stable baselines
+* [Article by Leandro Kieliger](https://lkieliger.medium.com/deep-reinforcement-learning-in-practice-by-playing-doom-part-1-getting-started-618c99075c77)
